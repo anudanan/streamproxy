@@ -289,7 +289,7 @@ ClientSocket::ClientSocket(int fd_in,
 			Util::vlog("ClientSocket: live streaming request");
 			(void)LiveStreaming(service, fd, streaming_parameters, config_map);
 			Util::vlog("ClientSocket: live streaming ends");
-			_exit(0)
+			_exit(0);
 		}
 
 		if((urlparams[""] == "/live") && urlparams.count("service"))
