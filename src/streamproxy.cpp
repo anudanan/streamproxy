@@ -330,13 +330,8 @@ int main(int argc, char *const argv[], char *const arge[])
 				Util::vlog("streamproxy: accept new connection on port %s, default action: %s, fd %d",
 						it2->first.c_str(), action_name[it2->second.default_action], new_socket);
 
-				if(fork()) // parent
-					close(new_socket);
-				else
-				{
-					(void)ClientSocket(new_socket, it2->second.default_action, config_map, *stb_traits);
-					_exit(0);
-				}
+				(void)ClientSocket(new_socket, it2->second.default_action, config_map, *stb_traits);
+				close(new_socket);
 
 				usleep(100000); // runaway protection
 			}

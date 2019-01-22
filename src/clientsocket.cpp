@@ -279,17 +279,20 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if((urlparams[""] == "/livestream") && urlparams.count("service"))
 		{
+			if (fork())
+				return;
 			Service service(urlparams["service"]);
 
 			Util::vlog("ClientSocket: live streaming request");
 			(void)LiveStreaming(service, fd, streaming_parameters, config_map);
 			Util::vlog("ClientSocket: live streaming ends");
-
-			return;
+			_exit(0)
 		}
 
 		if((urlparams[""] == "/live") && urlparams.count("service"))
 		{
+			if (fork())
+				return;
 			Service service(urlparams["service"]);
 
 			Util::vlog("ClientSocket: live transcoding request");
@@ -318,20 +321,24 @@ ClientSocket::ClientSocket(int fd_in,
 
 			Util::vlog("ClientSocket: live transcoding ends");
 
-			return;
+			_exit(0);
 		}
 
 		if((urlparams[""] == "/filestream") && urlparams.count("file"))
 		{
+			if (fork())
+				return;
 			Util::vlog("ClientSocket: file streaming request");
 			(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, config_map);
 			Util::vlog("ClientSocket: file streaming ends");
 
-			return;
+			_exit(0);
 		}
 
 		if((urlparams[""] == "/file") && urlparams.count("file"))
 		{
+			if (fork())
+				return;
 			Util::vlog("ClientSocket: file transcoding request");
 
 			switch(stb_traits.transcoding_type)
@@ -360,7 +367,7 @@ ClientSocket::ClientSocket(int fd_in,
 
 			Util::vlog("ClientSocket: file transcoding ends");
 
-			return;
+			_exit(0);
 		}
 
 		if(urlparams[""] == "/")
@@ -393,6 +400,8 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if(urlparams[""].length() > 1)
 		{
+			if (fork())
+				return;
 			if((urlparams[""].substr(1, 1) == "/"))
 			{
 				Util::vlog("ClientSocket: default file request");
@@ -431,7 +440,6 @@ ClientSocket::ClientSocket(int fd_in,
 
 				Util::vlog("ClientSocket: default file ends");
 
-				return;
 			}
 			else
 			{
@@ -475,9 +483,9 @@ ClientSocket::ClientSocket(int fd_in,
 
 					Util::vlog("ClientSocket: default live ends");
 
-					return;
 				}
 			}
+			_exit(0);	
 		}
 
 		throw(http_trap(string("unknown url: ") + urlparams[""], 404, "Not found"));
