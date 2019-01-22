@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <linux/sockios.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -50,7 +51,8 @@ ClientSocket::ClientSocket(int fd_in,
 	string	reply, message;
 	try
 	{
-		static char			read_buffer[1024];
+		static pid_t			pid_child=0;
+		char			read_buffer[1024];
 		ssize_t				bytes_read;
 		size_t				idx = string::npos;
 		string				header, cookie, value;
@@ -331,14 +333,22 @@ ClientSocket::ClientSocket(int fd_in,
 			Util::vlog("ClientSocket: file streaming request");
 			(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, config_map);
 			Util::vlog("ClientSocket: file streaming ends");
-
+			
 			_exit(0);
 		}
 
 		if((urlparams[""] == "/file") && urlparams.count("file"))
 		{
-			if (fork())
+			if (pid_child)
+			{ 	Util::vlog("streamproxy: pid %d killed", pid_child);
+				kill(pchild, SIGKILL));
+			}
+
+			
+			pid_child = fork());
+			if (pid_child)
 				return;
+
 			Util::vlog("ClientSocket: file transcoding request");
 
 			switch(stb_traits.transcoding_type)
@@ -367,6 +377,7 @@ ClientSocket::ClientSocket(int fd_in,
 
 			Util::vlog("ClientSocket: file transcoding ends");
 
+			pid_child = 0;
 			_exit(0);
 		}
 
