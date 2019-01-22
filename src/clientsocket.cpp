@@ -20,6 +20,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <signal.h>
 #include <linux/sockios.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -341,7 +342,7 @@ ClientSocket::ClientSocket(int fd_in,
 		{
 			if (pid_child)
 			{ 	Util::vlog("streamproxy: pid %d killed", pid_child);
-				kill(pchild, SIGKILL));
+				kill(pid_child, SIGKILL));
 			}
 
 			
