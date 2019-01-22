@@ -342,11 +342,11 @@ ClientSocket::ClientSocket(int fd_in,
 		{
 			if (pid_child)
 			{ 	Util::vlog("streamproxy: pid %d killed", pid_child);
-				kill(pid_child, SIGKILL));
+				kill(pid_child, SIGKILL);
 			}
 
 			
-			pid_child = fork());
+			pid_child = fork();
 			if (pid_child)
 				return;
 
