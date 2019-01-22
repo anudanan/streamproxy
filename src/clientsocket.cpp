@@ -39,7 +39,7 @@ ClientSocket::ClientSocket(int fd_in,
 		default_streaming_action default_action,
 		const ConfigMap &config_map_in,
 		const stb_traits_t &stb_traits_in,
-		pid_t *pid_child)
+		pid_t *pid_ch)
 	:
 		fd(fd_in), config_map(config_map_in),
 		stb_traits(stb_traits_in)
@@ -340,14 +340,14 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if((urlparams[""] == "/file") && urlparams.count("file"))
 		{
-			if (*pid_child)
-			{ 	Util::vlog("streamproxy: pid %d killed", pid_child);
-				kill(*pid_child, SIGKILL);
+			if (*pid_ch)
+			{ 	Util::vlog("streamproxy: pid %d killed", *pid_ch);
+				kill(*pid_ch, SIGKILL);
 			}
 
 			
-			*pid_child = fork();
-			if (*pid_child)
+			*pid_ch = fork();
+			if (*pid_ch)
 				return;
 
 			Util::vlog("ClientSocket: file transcoding request");
