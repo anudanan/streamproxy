@@ -72,6 +72,8 @@ static void reexec(void)
 	}
 }
 
+pid_t	pid_child=0;
+
 static void sigchld(int) // prevent Z)ombie processes
 {
 	siginfo_t infop;
@@ -81,6 +83,9 @@ static void sigchld(int) // prevent Z)ombie processes
 	waitid(P_ALL, 0, &infop, WEXITED | WNOHANG);
 
 	Util::vlog("streamproxy: pid %d exited", infop.si_pid);
+
+	if (pid_child == infop.si_pid)
+		pid_child = 0;
 
 	if(infop.si_pid)
 	{
@@ -330,7 +335,7 @@ int main(int argc, char *const argv[], char *const arge[])
 				Util::vlog("streamproxy: accept new connection on port %s, default action: %s, fd %d",
 						it2->first.c_str(), action_name[it2->second.default_action], new_socket);
 
-				(void)ClientSocket(new_socket, it2->second.default_action, config_map, *stb_traits);
+				(void)ClientSocket(new_socket, it2->second.default_action, config_map, *stb_traits, &pid_child);
 				close(new_socket);
 
 				usleep(100000); // runaway protection

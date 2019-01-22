@@ -38,7 +38,8 @@ using std::string;
 ClientSocket::ClientSocket(int fd_in,
 		default_streaming_action default_action,
 		const ConfigMap &config_map_in,
-		const stb_traits_t &stb_traits_in)
+		const stb_traits_t &stb_traits_in,
+		pid_t *pid_child)
 	:
 		fd(fd_in), config_map(config_map_in),
 		stb_traits(stb_traits_in)
@@ -52,7 +53,6 @@ ClientSocket::ClientSocket(int fd_in,
 	string	reply, message;
 	try
 	{
-		static pid_t			pid_child=0;
 		char			read_buffer[1024];
 		ssize_t				bytes_read;
 		size_t				idx = string::npos;
@@ -340,14 +340,14 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if((urlparams[""] == "/file") && urlparams.count("file"))
 		{
-			if (pid_child)
+			if (*pid_child)
 			{ 	Util::vlog("streamproxy: pid %d killed", pid_child);
-				kill(pid_child, SIGKILL);
+				kill(*pid_child, SIGKILL);
 			}
 
 			
-			pid_child = fork();
-			if (pid_child)
+			*pid_child = fork();
+			if (*pid_child)
 				return;
 
 			Util::vlog("ClientSocket: file transcoding request");
@@ -378,7 +378,6 @@ ClientSocket::ClientSocket(int fd_in,
 
 			Util::vlog("ClientSocket: file transcoding ends");
 
-			pid_child = 0;
 			_exit(0);
 		}
 
