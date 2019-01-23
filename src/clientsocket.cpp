@@ -74,6 +74,7 @@ ClientSocket::ClientSocket(int fd_in,
 		StreamingParameters::const_iterator spit;
 
 		int arg1;
+		pid_tmp = 0;			
 
 		arg1 = fcntl(fd, F_GETFL, 0);
 		if(fcntl(fd, F_SETFL, arg1 | O_NONBLOCK))
@@ -518,6 +519,9 @@ ClientSocket::ClientSocket(int fd_in,
 		Util::vlog("ClientSocket: http_trap: %s (%d: %s)", e.what(), e.http_error, message.c_str());
 
 		write(fd, reply.c_str(), reply.length());
+		if (pid_tmp == 0)
+			_exit(0);
+
 	}
 	catch(const trap &e)
 	{
@@ -525,6 +529,8 @@ ClientSocket::ClientSocket(int fd_in,
 		reply += http_error_headers;
 		Util::vlog("ClientSocket: trap: %s", e.what());
 		write(fd, reply.c_str(), reply.length());
+		if (pid_tmp == 0)
+			_exit(0);
 	}
 	catch(...)
 	{
@@ -532,6 +538,8 @@ ClientSocket::ClientSocket(int fd_in,
 		reply += http_error_headers;
 		Util::vlog("ClientSocket: unknown exception");
 		write(fd, reply.c_str(), reply.length());
+		if (pid_tmp == 0)
+			_exit(0);
 	}
 }
 
