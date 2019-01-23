@@ -50,7 +50,7 @@ ClientSocket::ClientSocket(int fd_in,
 		"Accept-Ranges: bytes\r\n"
 		"\r\n";
 
-	pid_t				pid_tmp = 1;
+	pid_t				pid_ch_tmp = 1;
 
 	string	reply, message;
 	try
@@ -75,7 +75,7 @@ ClientSocket::ClientSocket(int fd_in,
 		StreamingParameters::const_iterator spit;
 
 		int arg1;
-		pid_tmp = 1;			
+		pid_ch_tmp = 1;			
 
 		arg1 = fcntl(fd, F_GETFL, 0);
 		if(fcntl(fd, F_SETFL, arg1 | O_NONBLOCK))
@@ -350,13 +350,13 @@ ClientSocket::ClientSocket(int fd_in,
 				*pid_ch = 0;
 			}
 
-			pid_tmp = fork();
+			pid_ch_tmp = fork();
 		 	if (*pid_ch == 0)
 			{ 	filename = urlparams["file"];
-				*pid_ch = pid_tmp;
+				*pid_ch = pid_ch_tmp;
 			}
 		
-			if (pid_tmp)
+			if (pid_ch_tmp)
 				return;
 
 			Util::vlog("ClientSocket: file transcoding request");
@@ -520,7 +520,7 @@ ClientSocket::ClientSocket(int fd_in,
 		Util::vlog("ClientSocket: http_trap: %s (%d: %s)", e.what(), e.http_error, message.c_str());
 
 		write(fd, reply.c_str(), reply.length());
-		if (pid_tmp == 0)
+		if (pid_ch_tmp == 0)
 			_exit(0);
 
 	}
@@ -530,7 +530,7 @@ ClientSocket::ClientSocket(int fd_in,
 		reply += http_error_headers;
 		Util::vlog("ClientSocket: trap: %s", e.what());
 		write(fd, reply.c_str(), reply.length());
-		if (pid_tmp == 0)
+		if (pid_ch_tmp == 0)
 			_exit(0);
 	}
 	catch(...)
@@ -539,7 +539,7 @@ ClientSocket::ClientSocket(int fd_in,
 		reply += http_error_headers;
 		Util::vlog("ClientSocket: unknown exception");
 		write(fd, reply.c_str(), reply.length());
-		if (pid_tmp == 0)
+		if (pid_ch_tmp == 0)
 			_exit(0);
 	}
 }
