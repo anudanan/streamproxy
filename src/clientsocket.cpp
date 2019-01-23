@@ -50,7 +50,7 @@ ClientSocket::ClientSocket(int fd_in,
 		"Accept-Ranges: bytes\r\n"
 		"\r\n";
 
-	pid_t				pid_tmp = 0;
+	pid_t				pid_tmp = 1;
 
 	string	reply, message;
 	try
@@ -69,13 +69,13 @@ ClientSocket::ClientSocket(int fd_in,
 		stringvector		tokens;
 
 		stringvector::iterator it1;
-		stringvector::const_iterator it2;
+		:tringvector::const_iterator it2;
 		HeaderMap::const_iterator headit;
 		CookieMap::const_iterator cookit;
 		StreamingParameters::const_iterator spit;
 
 		int arg1;
-		pid_tmp = 0;			
+		pid_tmp = 1;			
 
 		arg1 = fcntl(fd, F_GETFL, 0);
 		if(fcntl(fd, F_SETFL, arg1 | O_NONBLOCK))
