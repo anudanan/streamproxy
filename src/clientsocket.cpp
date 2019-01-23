@@ -50,7 +50,7 @@ ClientSocket::ClientSocket(int fd_in,
 		"Accept-Ranges: bytes\r\n"
 		"\r\n";
 
-	pid_t				pid_tmp;
+	pid_t				pid_tmp = 0;
 
 	string	reply, message;
 	try
