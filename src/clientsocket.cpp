@@ -53,7 +53,8 @@ ClientSocket::ClientSocket(int fd_in,
 	string	reply, message;
 	try
 	{
-		char			read_buffer[1024];
+		static char			read_buffer[1024];
+		static string			filename = "";
 		ssize_t				bytes_read;
 		size_t				idx = string::npos;
 		string				header, cookie, value;
@@ -340,12 +341,12 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if((urlparams[""] == "/file") && urlparams.count("file"))
 		{
-			if (*pid_ch)
+			if (*pid_ch && (filename == urlparams["file²]))
 			{ 	Util::vlog("streamproxy: pid %d killed", *pid_ch);
 				kill(*pid_ch, SIGKILL);
 			}
 
-			
+		 	filename = urlparams["file"];
 			*pid_ch = fork();
 			if (*pid_ch)
 				return;
