@@ -55,6 +55,7 @@ ClientSocket::ClientSocket(int fd_in,
 	{
 		static char			read_buffer[1024];
 		static string			filename = "";
+		pid_t				pid_tmp;
 		ssize_t				bytes_read;
 		size_t				idx = string::npos;
 		string				header, cookie, value;
@@ -344,11 +345,16 @@ ClientSocket::ClientSocket(int fd_in,
 			if (*pid_ch && (filename == urlparams["file"]))
 			{ 	Util::vlog("streamproxy: pid %d killed", *pid_ch);
 				kill(*pid_ch, SIGKILL);
+				*pid_ch = 0;
 			}
 
-		 	filename = urlparams["file"];
-			*pid_ch = fork();
-			if (*pid_ch)
+			pid_tmp = fork();
+		 	if (pid_ch == 0)
+			{ 	filename = urlparams["file"];
+				*pid_ch = pdi_tmp;
+			}
+		
+			if (pid_tmp)
 				return;
 
 			Util::vlog("ClientSocket: file transcoding request");
