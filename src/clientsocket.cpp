@@ -50,12 +50,13 @@ ClientSocket::ClientSocket(int fd_in,
 		"Accept-Ranges: bytes\r\n"
 		"\r\n";
 
+	pid_t				pid_tmp;
+
 	string	reply, message;
 	try
 	{
 		static char			read_buffer[1024];
 		static string			filename = "";
-		pid_t				pid_tmp;
 		ssize_t				bytes_read;
 		size_t				idx = string::npos;
 		string				header, cookie, value;
