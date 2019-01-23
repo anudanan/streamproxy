@@ -69,7 +69,7 @@ ClientSocket::ClientSocket(int fd_in,
 		stringvector		tokens;
 
 		stringvector::iterator it1;
-		:tringvector::const_iterator it2;
+		stringvector::const_iterator it2;
 		HeaderMap::const_iterator headit;
 		CookieMap::const_iterator cookit;
 		StreamingParameters::const_iterator spit;
