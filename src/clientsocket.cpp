@@ -351,7 +351,7 @@ ClientSocket::ClientSocket(int fd_in,
 			pid_tmp = fork();
 		 	if (pid_ch == 0)
 			{ 	filename = urlparams["file"];
-				*pid_ch = pdi_tmp;
+				*pid_ch = pid_tmp;
 			}
 		
 			if (pid_tmp)
