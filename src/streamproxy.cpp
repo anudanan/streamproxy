@@ -347,11 +347,13 @@ int main(int argc, char *const argv[], char *const arge[])
 			}
 		}
 	}
+	
 	catch(const trap &e)
 	{
 		fprintf(stderr, "streamproxy: %s\n", e.what());
 		exit(1);
 	}
+
 	catch(bpo::error &e)
 	{
 		fprintf(stderr, "streamproxy: %s\n", e.what());
@@ -360,6 +362,7 @@ int main(int argc, char *const argv[], char *const arge[])
 		fprintf(stderr, "streamproxy: %s\n", convert.str().c_str());
 		exit(1);
 	}
+
 	catch(...)
 	{
 		Util::vlog("streamproxy: default exception");
