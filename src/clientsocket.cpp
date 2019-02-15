@@ -286,8 +286,12 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if((urlparams[""] == "/livestream") && urlparams.count("service"))
 		{
-			if (fork())
+			pid_ch_tmp = fork();
+			if (pid_ch_tmp)
+			{ 	if (*pid_ch == 0)
+					*pid_ch = pid_ch_tmp;
 				return;
+			}
 			Service service(urlparams["service"]);
 
 			Util::vlog("ClientSocket: live streaming request");
@@ -298,8 +302,12 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if((urlparams[""] == "/live") && urlparams.count("service"))
 		{
-			if (fork())
+			pid_ch_tmp = fork();
+			if (pid_ch_tmp)
+			{ 	if (*pid_ch == 0)
+					*pid_ch = pid_ch_tmp;
 				return;
+			}
 			Service service(urlparams["service"]);
 
 			Util::vlog("ClientSocket: live transcoding request");
@@ -333,8 +341,12 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if((urlparams[""] == "/filestream") && urlparams.count("file"))
 		{
-			if (fork())
+			pid_ch_tmp = fork();
+			if (pid_ch_tmp)
+			{ 	if (*pid_ch == 0)
+					*pid_ch = pid_ch_tmp;
 				return;
+			}
 			Util::vlog("ClientSocket: file streaming request");
 			(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, config_map);
 			Util::vlog("ClientSocket: file streaming ends");
@@ -420,8 +432,12 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if(urlparams[""].length() > 1)
 		{
-			if (fork())
+			pid_ch_tmp = fork();
+			if (pid_ch_tmp)
+			{ 	if (*pid_ch == 0)
+					*pid_ch = pid_ch_tmp;
 				return;
+			}
 			if((urlparams[""].substr(1, 1) == "/"))
 			{
 				Util::vlog("ClientSocket: default file request");

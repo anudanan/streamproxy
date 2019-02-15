@@ -311,8 +311,13 @@ int main(int argc, char *const argv[], char *const arge[])
 
 			if(pfd[0].revents & POLLIN)
 			{
-				Util::vlog("streamproxy: config file change detected, restarting");
-				reexec();
+				if (pid_child == 0)
+				{
+					Util::vlog("streamproxy: config file change detected, restarting");
+					reexec();
+				}
+				else
+					usleep(100000); // runaway protection
 			}
 
 			for(ix = 1; ix < pfds; ix++)
