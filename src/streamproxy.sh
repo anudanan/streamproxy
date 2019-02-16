@@ -18,7 +18,7 @@ case "$1" in
 
 	start)
 		echo -n "Starting ${DESC}: "
-		start-stop-daemon -S -x "$DAEMON"
+		start-stop-daemon -S -b -x "$DAEMON"
 		echo "${NAME}."
 		;;
 

@@ -265,8 +265,8 @@ int main(int argc, char *const argv[], char *const arge[])
 		if((pfds = listen_action.size() + 1) < 2)
 			throw(trap("no listen_port:default_action parameters given"));
 
-		if(!Util::foreground && daemon(0, 0))
-			throw(trap("daemon() gives error"));
+//		if(!Util::foreground && daemon(0, 0))
+//			throw(trap("daemon() gives error"));
 
 		signal_action.sa_handler = sigchld;
 		signal_action.sa_flags = SA_NOCLDSTOP | SA_NODEFER | SA_RESTART;
