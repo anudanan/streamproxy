@@ -498,7 +498,7 @@ bool MpegTS::read_pmt(int filter_pid)
                                                         if (private_stream_is_ac3 || (deu_audio_pid < 0))
                                                                 deu_audio_pid = es_pid;
                                                 }
-                                                if(private_stream_is_ac3 || (audio_pid < 0)) // ac3 stream has preference
+                                                if(audio_pid < 0)			// take the first audio
                                                         audio_pid = es_pid;
                                         }
                                 }
