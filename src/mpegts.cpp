@@ -376,7 +376,7 @@ bool MpegTS::read_pmt(int filter_pid)
 	const	pmt_ds_entry_t	*ds_entry;
 	const	pmt_ds_a_t		*ds_a;
 
-	pcr_pid = video_pid = audio_pid = -1;
+	pcr_pid = video_pid = deu_audio_pid = audio_pid = -1;
 
 	for(attempt = 0; attempt < 16; attempt++)
 	{
@@ -493,11 +493,19 @@ bool MpegTS::read_pmt(int filter_pid)
 
 					if(!boost::iequals(stream_language, "nar"))
 					{
-						if(private_stream_is_ac3 || (audio_pid < 0)) // ac3 stream has preference
-							audio_pid = es_pid;
-					}
-				}
-			}
+                                                if(boost::iequals(stream_language, "deu"))
+                                                {
+                                                        if (private_stream_is_ac3 || (deu_audio_pid < 0))
+                                                                deu_audio_pid = es_pid;
+                                                }
+                                                if(private_stream_is_ac3 || (audio_pid < 0)) // ac3 stream has preference
+                                                        audio_pid = es_pid;
+                                        }
+                                }
+                        }
+                        if (deu_audio_pid != -1)
+                                audio_pid = deu_audio_pid;              // germen has preference
+
 
 next_descriptor_entry:
 			es_data_offset += es_data_skip + esinfo_length;

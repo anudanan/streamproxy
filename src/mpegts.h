@@ -194,6 +194,7 @@ class MpegTS
 		int		pcr_pid;
 		int		video_pid;
 		int		audio_pid;
+		int		deu_audio_pid;
 
 		bool	request_time_seek;
 		bool	is_time_seekable;
