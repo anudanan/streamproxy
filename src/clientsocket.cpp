@@ -357,8 +357,8 @@ ClientSocket::ClientSocket(int fd_in,
 		if((urlparams[""] == "/file") && urlparams.count("file"))
 		{
 			if (*pid_ch && (filename == urlparams["file"]))
-			{ 	Util::vlog("streamproxy: pid %d killed", *pid_ch);
-				kill(*pid_ch, SIGKILL);
+			{ 	Util::vlog("streamproxy: sends SIGTERM to child pid %d", *pid_ch);
+				kill(*pid_ch, SIGTERM);
 				*pid_ch = 0;
 			}
 

@@ -16,7 +16,17 @@ using std::string;
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <poll.h>
+
+int 	parent_signal = 0;
+
+static void sigparentterm(int signum) // parent process can terminate me
+{
+	parent_signal = signum;
+
+}
+
 
 FileTranscodingBroadcom::FileTranscodingBroadcom(string file, int socket_fd, string,
 		const stb_traits_t &stb_traits, const StreamingParameters &streaming_parameters,
@@ -43,6 +53,9 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(string file, int socket_fd, str
 										"Server: Streamproxy\r\n"
 										"Accept-Ranges: bytes\r\n";
 	string			http_reply;
+
+
+	signal(SIGTERM, sigparentterm);
 
 	if(streaming_parameters.count("startfrom"))
 		time_offset_s = TimeOffset(streaming_parameters.at("startfrom")).as_seconds();
@@ -149,6 +162,12 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(string file, int socket_fd, str
 
 	for(;;)
 	{
+		if(parent_signal)
+		{
+        		Util::vlog("streamproxy: broadcom file transcoding received signal %d ",parent_signal);
+			break;
+		}
+
 		if(socket_queue.usage() > max_fill_socket)
 			max_fill_socket = socket_queue.usage();
 
