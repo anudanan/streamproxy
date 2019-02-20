@@ -73,6 +73,7 @@ ClientSocket::ClientSocket(int fd_in,
 		HeaderMap::const_iterator headit;
 		CookieMap::const_iterator cookit;
 		StreamingParameters::const_iterator spit;
+		ConfigMap::const_iterator cmit;
 
 		int arg1;
 		pid_ch_tmp = 1;			

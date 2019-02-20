@@ -194,7 +194,9 @@ class MpegTS
 		int		pcr_pid;
 		int		video_pid;
 		int		audio_pid;
-		int		deu_audio_pid;
+		int		audio_lang_pid;
+		std::string	audiolang;
+		std::string	audiolang_fallback;
 
 		bool	request_time_seek;
 		bool	is_time_seekable;
@@ -205,7 +207,7 @@ class MpegTS
 		off_t	stream_length;
 
 		MpegTS(int fd, bool request_time_seek);
-		MpegTS(std::string file, bool request_time_seek);
+		MpegTS(std::string file, std::string audiolang, bool request_time_seek);
 		~MpegTS();
 
 		int		get_fd()									const;

@@ -30,23 +30,24 @@ static void sigparentterm(int signum) // parent process can terminate me
 
 FileTranscodingBroadcom::FileTranscodingBroadcom(string file, int socket_fd, string,
 		const stb_traits_t &stb_traits, const StreamingParameters &streaming_parameters,
-		const ConfigMap &)
+		const ConfigMap &config_map)
 {
 	PidMap::const_iterator it;
 	PidMap			pids, encoder_pids;
-	int				encoder_fd, timeout;
+	int			encoder_fd, timeout;
 	size_t			max_fill_socket = 0;
 	ssize_t			bytes_read;
-	struct pollfd	pfd[2];
+	struct pollfd		pfd[2];
 	off_t			file_offset = 0;
-	int				time_offset_s = 0;
+	int			time_offset_s = 0;
 	off_t			byte_offset = 0;
 	off_t			http_range = 0;
-	int				pct_offset = 0;
+	int			pct_offset = 0;
+	string			audio_lang;
 	bool			partial = false;
 	encoder_state_t	encoder_state;
 	Queue			socket_queue(1024 * 1024);
-	const char *	http_ok			=	"HTTP/1.1 200 OK\r\n";
+	const char *	http_ok		=	"HTTP/1.1 200 OK\r\n";
 	const char *	http_partial	=	"HTTP/1.1 206 Partial Content\r\n";
 	const char *	http_headers	=	"Connection: Close\r\n"
 										"Content-Type: video/mpeg\r\n"
@@ -69,7 +70,10 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(string file, int socket_fd, str
 	if(streaming_parameters.count("pct_offset"))
 		pct_offset = Util::string_to_uint(streaming_parameters.at("pct_offset"));
 
-	MpegTS stream(file, time_offset_s > 0);
+	audio_lang = config_map.at("audiolang").string_value;
+	Util::vlog("FileTrancoding: audiolang: %s", audio_lang.c_str());
+
+	MpegTS stream(file, audio_lang, time_offset_s > 0);
 
 	Util::vlog("FileTrancoding: streaming file: %s", file.c_str());
 	Util::vlog("FileTrancoding: byte_offset: %llu / %llu (%llu %%)", byte_offset, stream.stream_length,
@@ -153,7 +157,7 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(string file, int socket_fd, str
 	encoder_pids = encoder.getpids();
 
 	for(it = encoder_pids.begin(); it != encoder_pids.end(); it++)
-		Util::vlog("FileTranscodingBroadcom: encoder pid[%s] = %x", it->first.c_str(), it->second);
+		Util::vlog("FileTranscodingBroadcom: encoder pid[%s] = %d", it->first.c_str(), it->second);
 
 	if((encoder_fd = encoder.getfd()) < 0)
 		throw(trap("FileTranscodingBroadcom: transcoding: encoder: fd not open"));
