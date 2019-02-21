@@ -495,9 +495,9 @@ bool MpegTS::read_pmt(int filter_pid)
 					}
 
 					if (private_stream_is_ac3)
-						Util::vlog("MpegTS::found audiolang [%s]: pid: %d, [AC3]", es_pid, stream_language.c_str());
+						Util::vlog("MpegTS::found audiolang [%s]: pid: %d, [AC3]", stream_language.c_str(), es_pid);
 					else
-						Util::vlog("MpegTS::found audiolang [%s]: pid: %d", es_pid, stream_language.c_str());
+						Util::vlog("MpegTS::found audiolang [%s]: pid: %d", stream_language.c_str(), es_pid);
 
 					if(!(boost::iequals(stream_language, "nar") || boost::iequals(stream_language, "")))
 					{
@@ -522,7 +522,7 @@ next_descriptor_entry:
 		if (audio_lang_pid != -1)
 		{
 			audio_pid = audio_lang_pid;              // language has preference
-			Util::vlog("MpegTS::audiolang [%s] choosen, pid: %d", audiolang.c_str(), audio_pid); 
+			Util::vlog("MpegTS::choose audiolang [%s], pid: %d", audiolang.c_str(), audio_pid); 
 		}
 		else
 		{ 
