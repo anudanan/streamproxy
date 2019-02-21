@@ -494,7 +494,11 @@ bool MpegTS::read_pmt(int filter_pid)
 						ds_data_offset += ds_entry->length + offsetof(pmt_ds_entry_t, data);
 					}
 
-				
+					if (private_stream_is_ac3)
+						Util::vlog("MpegTS::found audiolang [%s]: pid: %d, [AC3]", es_pid, stream_language.c_str());
+					else
+						Util::vlog("MpegTS::found audiolang [%s]: pid: %d", es_pid, stream_language.c_str());
+
 					if(!(boost::iequals(stream_language, "nar") || boost::iequals(stream_language, "")))
 					{
                                                 if(boost::iequals(stream_language, audiolang.c_str()))
