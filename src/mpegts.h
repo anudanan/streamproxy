@@ -194,12 +194,10 @@ class MpegTS
 		int		pcr_pid;
 		int		video_pid;
 		int		audio_pid;
-		int		audio_lang_pid;
 		std::string	audiolang;
-		std::string	audiolang_fallback;
 
-		bool	request_time_seek;
-		bool	is_time_seekable;
+		bool		request_time_seek;
+		bool		is_time_seekable;
 
 		int		first_pcr_ms;
 		int		last_pcr_ms;

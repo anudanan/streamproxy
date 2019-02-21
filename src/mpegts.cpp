@@ -368,8 +368,13 @@ bool MpegTS::read_pmt(int filter_pid)
 	int		attempt, programinfo_length, esinfo_length;
 	int		es_pid, es_data_length, es_data_skip, es_data_offset;
 	int		ds_data_skip, ds_data_offset;
-	bool	private_stream_is_ac3;
-	string	stream_language;
+	bool		private_stream_is_ac3;
+	int		audioac3_pid;
+	int		audiolang_pid;
+	int		audiolangac3_pid;	
+	string		stream_language;
+        string     	audiolang_fallback;
+
 
 	const	uint8_t			*es_data;
 	const	pmt_header_t	*pmt_header;
@@ -377,7 +382,7 @@ bool MpegTS::read_pmt(int filter_pid)
 	const	pmt_ds_entry_t	*ds_entry;
 	const	pmt_ds_a_t		*ds_a;
 
-	pcr_pid = video_pid = audio_lang_pid = audio_pid = -1;
+	pcr_pid = video_pid = audio_pid = audioac3_pid = audiolang_pid = audiolangac3_pid = -1;
 	audiolang_fallback = "";
 
 	for(attempt = 0; attempt < 16; attempt++)
@@ -503,13 +508,28 @@ bool MpegTS::read_pmt(int filter_pid)
 					{
                                                 if(boost::iequals(stream_language, audiolang.c_str()))
                                                 {
-                                                        if (private_stream_is_ac3 || (audio_lang_pid < 0))
-                                                                audio_lang_pid = es_pid;
+                                                        if (private_stream_is_ac3)
+							{
+								if (audiolangac3_pid == -1)		
+									audiolang_pid= audiolangac3_pid = es_pid;	// first AC3 with language
+							}
+							else
+								if (audiolang_pid == -1)			
+                                                                	audiolang_pid = es_pid;				// first with language
                                                 }
-                                                if( audio_pid < 0)// take the first audio
-						{
-                                                        audio_pid = es_pid;
-							audiolang_fallback = stream_language;
+                                                if(private_stream_is_ac3)
+						{	
+							if (audioac3_pid == -1)
+							{
+                                                        	audio_pid = audioac3_pid = es_pid;			// first AC3 Audio
+								audiolang_fallback = stream_language;
+							}
+							else
+								if (audio_pid == -1)
+								{
+									audio_pid = es_pid;				// First Audio
+									audiolang_fallback = stream_language;
+								}
 						}
                                         }
                                 }
@@ -519,9 +539,9 @@ next_descriptor_entry:
 			es_data_offset += es_data_skip + esinfo_length;
 		}
 
-		if (audio_lang_pid != -1)
+		if (audiolang_pid != -1)
 		{
-			audio_pid = audio_lang_pid;              // language has preference
+			audio_pid = audiolang_pid;              // language has preference
 			Util::vlog("MpegTS::choose audiolang [%s], pid: %d", audiolang.c_str(), audio_pid); 
 		}
 		else
