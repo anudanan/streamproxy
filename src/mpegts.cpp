@@ -179,7 +179,7 @@ bool MpegTS::read_table(int filter_pid, int filter_table)
 			}
 		}
 
-		//Util::vlog("MpegTS::read_table: correct packet with pid: %x, %s", pid, packet.header.pusi ? "start" : "continuation");
+		//Util::vlog("MpegTS::read_table: correct packet with pid: 0x%x, %s", pid, packet.header.pusi ? "start" : "continuation");
 
 		packet_payload_offset = offsetof(ts_packet_t, header.payload);
 
@@ -223,13 +223,13 @@ bool MpegTS::read_table(int filter_pid, int filter_table)
 
 			if(table->reserved != 0x03)
 			{
-				Util::vlog("MpegTS::read_table: reserved != 0x03: %x", table->reserved);
+				Util::vlog("MpegTS::read_table: reserved != 0x03: 0x%x", table->reserved);
 				goto retry;
 			}
 
 			if(table->section_length_unused != 0x00)
 			{
-				Util::vlog("MpegTS::read_table: section length unused != 0x00: %x", table->section_length_unused);
+				Util::vlog("MpegTS::read_table: section length unused != 0x00: 0x%x", table->section_length_unused);
 				goto retry;
 			}
 
@@ -318,7 +318,7 @@ retry:
 
 	if(my_crc.checksum() != their_crc)
 	{
-		Util::vlog("MpegTS::read_table: crc mismatch: my crc: %x, their crc: %x", my_crc.checksum(), their_crc);
+		Util::vlog("MpegTS::read_table: crc mismatch: my crc: 0x%x, their crc: 0x%x", my_crc.checksum(), their_crc);
 		return(false);
 	}
 
@@ -343,11 +343,11 @@ bool MpegTS::read_pat()
 		{
 			program = (entry[current].program_high << 8) | (entry[current].program_low);
 			pid = (entry[current].pmt_pid_high << 8) | (entry[current].pmt_pid_low);
-			//Util::vlog("MpegTS::read_pat > program: %d -> pid %x", program, pid);
+			//Util::vlog("MpegTS::read_pat > program: %d -> pid 0x%x", program, pid);
 
 			if(entry[current].reserved != 0x07)
 			{
-				Util::vlog("MpegTS::read_pat > reserved != 0x07: 0x%x", entry[current].reserved);
+				//Util::vlog("MpegTS::read_pat > reserved != 0x07: 0x%x", entry[current].reserved);
 				goto next_pat_entry;
 			}
 
@@ -369,10 +369,12 @@ bool MpegTS::read_pmt(int filter_pid)
 	int		es_pid, es_data_length, es_data_skip, es_data_offset;
 	int		ds_data_skip, ds_data_offset;
 	bool		private_stream_is_ac3;
+	bool		private_stream_is_audio;
 	int		audioac3_pid;
 	int		audiolang_pid;
 	int		audiolangac3_pid;	
 	string		stream_language;
+        string     	audiolang_choose;
         string     	audiolang_fallback;
 
 
@@ -383,7 +385,7 @@ bool MpegTS::read_pmt(int filter_pid)
 	const	pmt_ds_a_t		*ds_a;
 
 	pcr_pid = video_pid = audio_pid = audioac3_pid = audiolang_pid = audiolangac3_pid = -1;
-	audiolang_fallback = "";
+	audiolang_choose= "";
 
 	for(attempt = 0; attempt < 16; attempt++)
 	{
@@ -397,22 +399,22 @@ bool MpegTS::read_pmt(int filter_pid)
 
 		if(pmt_header->reserved_1 != 0x07)
 		{
-			//Util::vlog("MpegTS::read_pmt > reserved_1: %x", pmt_header->reserved_1);
+			//Util::vlog("MpegTS::read_pmt > reserved_1: 0x%x", pmt_header->reserved_1);
 			continue;
 		}
 
-		//Util::vlog("MpegTS::read_pmt: > pcr_pid: %x", pcr_pid);
+		//Util::vlog("MpegTS::read_pmt: > pcr_pid: 0x%x", pcr_pid);
 		//Util::vlog("MpegTS::read_pmt: > program info length: %d", programinfo_length);
 
 		if(pmt_header->unused != 0x00)
 		{
-			//Util::vlog("MpegTS::read_pmt: > unused: %x", pmt_header->unused);
+			//Util::vlog("MpegTS::read_pmt: > unused: 0x%x", pmt_header->unused);
 			continue;
 		}
 
 		if(pmt_header->reserved_2 != 0x0f)
 		{
-			//Util::vlog("MpegTS::read_pmt: > reserved_2: %x", pmt_header->reserved_2);
+			//Util::vlog("MpegTS::read_pmt: > reserved_2: 0x%x", pmt_header->reserved_2);
 			continue;
 		}
 
@@ -428,21 +430,21 @@ bool MpegTS::read_pmt(int filter_pid)
 
 			if(es_entry->reserved_1 != 0x07)
 			{
-				//Util::vlog("MpegTS::read_pmt: reserved 1: %x", es_entry->reserved_1);
+				//Util::vlog("MpegTS::read_pmt: reserved 1: 0x%x", es_entry->reserved_1);
 				goto next_descriptor_entry;
 			}
 
-			//Util::vlog("MpegTS::read_pmt: >> pid: %x", es_pid);
+			//Util::vlog("MpegTS::read_pmt: >> pid: 0x%x, %d", es_pid, es_pid);
 
 			if(es_entry->reserved_2 != 0x0f)
 			{
-				//Util::vlog("MpegTS::read_pmt: reserved 2: %x", es_entry->reserved_2);
+				//Util::vlog("MpegTS::read_pmt: reserved 2: 0x%x", es_entry->reserved_2);
 				goto next_descriptor_entry;
 			}
 
 			if(es_entry->unused != 0x00)
 			{
-				//Util::vlog("MpegTS::read_pmt: unused: %x", es_entry->unused);
+				//Util::vlog("MpegTS::read_pmt: unused: 0x%x", es_entry->unused);
 				goto next_descriptor_entry;
 			}
 
@@ -464,6 +466,7 @@ bool MpegTS::read_pmt(int filter_pid)
 				case(mpeg_streamtype_private_pes):	// ac3
 				{
 					private_stream_is_ac3 = false;
+					private_stream_is_audio = true;
 					stream_language = "";
 
 					ds_data_skip = es_data_offset + offsetof(pmt_es_entry_t, descriptors); 
@@ -473,7 +476,7 @@ bool MpegTS::read_pmt(int filter_pid)
 						ds_entry = (const pmt_ds_entry_t *)&es_data[ds_data_skip + ds_data_offset];
 
 						//Util::vlog("MpegTS::read_pmt: >>> offset: %d", ds_data_offset);
-						//Util::vlog("MpegTS::read_pmt: >>> descriptor id: %x", ds_entry->id);
+						//Util::vlog("MpegTS::read_pmt: >>> descriptor id: 0x%x", ds_entry->id);
 						//Util::vlog("MpegTS::read_pmt: >>> length: %d", ds_entry->length);
 
 						switch(ds_entry->id)
@@ -494,28 +497,45 @@ bool MpegTS::read_pmt(int filter_pid)
 								private_stream_is_ac3 = true;
 								break;
 							}
+							case(pmt_desc_teletext):
+							case(pmt_desc_subtitle):
+							{
+								private_stream_is_audio = false;
+								break;
+							}
 						}
 
 						ds_data_offset += ds_entry->length + offsetof(pmt_ds_entry_t, data);
 					}
 
-					if (private_stream_is_ac3)
-						Util::vlog("MpegTS::found audiolang [%s]: pid: %d, [AC3]", stream_language.c_str(), es_pid);
+					if (!private_stream_is_audio)
+						Util::vlog("MpegTS::found teletext or subtitle with audiolang [%s]: pid: %d", stream_language.c_str(), es_pid);
 					else
-						Util::vlog("MpegTS::found audiolang [%s]: pid: %d", stream_language.c_str(), es_pid);
+					{
+						if (private_stream_is_ac3)
+							Util::vlog("MpegTS::found audiolang [%s]: pid: %d, [AC3]", stream_language.c_str(), es_pid);
+						else
+							Util::vlog("MpegTS::found audiolang [%s]: pid: %d", stream_language.c_str(), es_pid);
+					}
 
-					if(!(boost::iequals(stream_language, "nar") || boost::iequals(stream_language, "")))
+					if (private_stream_is_audio && !(boost::iequals(stream_language, "nar")) )
 					{
                                                 if(boost::starts_with(stream_language, audiolang))				// if selected ist prefix
                                                 {
                                                         if (private_stream_is_ac3)
 							{
 								if (audiolangac3_pid == -1)		
+								{
 									audiolang_pid= audiolangac3_pid = es_pid;	// first AC3 with language
+									audiolang_choose = stream_language;
+								}
 							}
 							else
 								if (audiolang_pid == -1)			
-                                                                	audiolang_pid = es_pid;				// first with language
+                                                               	{
+									audiolang_pid = es_pid;				// first with language
+									audiolang_choose = stream_language;
+								}
                                                 }
                                                 if(private_stream_is_ac3)
 						{	
@@ -542,12 +562,12 @@ next_descriptor_entry:
 		if (audiolang_pid != -1)
 		{
 			audio_pid = audiolang_pid;              // language has preference
-			Util::vlog("MpegTS::choose audiolang [%s], pid: %d", audiolang.c_str(), audio_pid); 
+			Util::vlog("MpegTS::=> choose audiolang [%s], pid: %d", audiolang_choose.c_str(), audio_pid); 
 		}
 		else
 		{ 
 			if (audio_pid != -1)
-				Util::vlog("MpegTS::no audiolang [%s] found, use audiolang [%s]: pid: %d", audiolang.c_str(), audiolang_fallback.c_str(), audio_pid); 
+				Util::vlog("MpegTS::=> no audiolang [%s] found, use audiolang [%s]: pid: %d", audiolang.c_str(), audiolang_fallback.c_str(), audio_pid); 
 		}
 
 		return(true);

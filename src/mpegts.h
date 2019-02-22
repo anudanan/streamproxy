@@ -37,6 +37,8 @@ class MpegTS
 		{
 			pmt_desc_language	= 0x0a,
 			pmt_desc_ac3		= 0x6a,
+			pmt_desc_teletext	= 0x56,
+			pmt_desc_subtitle	= 0x59,
 		};
 
 		enum
