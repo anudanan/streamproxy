@@ -180,8 +180,14 @@ int main(int argc, char *const argv[], char *const arge[])
 		config_map["profile"]		= ConfigValue(option_default_profile);
 		config_map["level"]		= ConfigValue(option_default_level);
 		config_map["bframes"]		= ConfigValue(option_default_bframes);
-		config_map["audiolang"]		= ConfigValue(option_default_audiolang);
 
+		if(settings.exists("config.osd.language") && ((option_default_audiolang.compare("xxx")==0) || option_default_audiolang.empty()))
+			config_map["audiolang"]	= ConfigValue(settings.as_string("config.osd.language").substr(0,2));	// use default from enigma
+			
+		else
+			config_map["audiolang"]	= ConfigValue(option_default_audiolang);
+
+			
 		if(settings.exists("config.OpenWebif.auth_for_streaming"))
 			if(settings.as_string("config.OpenWebif.auth") == "true")
 				config_map["auth"] = ConfigValue(true);
