@@ -506,7 +506,7 @@ bool MpegTS::read_pmt(int filter_pid)
 
 					if(!(boost::iequals(stream_language, "nar") || boost::iequals(stream_language, "")))
 					{
-                                                if(boost::iequals(stream_language, audiolang.c_str()))
+                                                if(boost::starts_with(stream_language, audiolang))				// if selected ist prefix
                                                 {
                                                         if (private_stream_is_ac3)
 							{
