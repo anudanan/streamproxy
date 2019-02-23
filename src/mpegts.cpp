@@ -402,7 +402,7 @@ bool MpegTS::read_pmt(int filter_pid)
 	bool		private_stream_is_audio;
 	int			audioac3_pid, audiolang_pid, audiolangac3_pid;	
 	int			audiolang_prio, audiolang_prio_act;
-	string     	audiolang_choose, audiolang_fallback;
+	string     	audiolang_choose, audiolangac3_choose, audiolang_fallback;
 	string		stream_language;
 
 
@@ -414,7 +414,7 @@ bool MpegTS::read_pmt(int filter_pid)
 
 	pcr_pid = video_pid = audio_pid = audioac3_pid = audiolang_pid = audiolangac3_pid = -1;
 	audiolang_prio_act = 255;															// lower prio than 1,2,3,4 for autolanguage.audio1-4
-	audiolang_choose= "";
+	audiolang_choose = audiolangac3_choose = "";
 
 	for(attempt = 0; attempt < 16; attempt++)
 	{
@@ -552,22 +552,20 @@ bool MpegTS::read_pmt(int filter_pid)
                         if((audiolang_prio = getselectedlang_prio(stream_language, audiolang)) > 0)	// if audiolang found with prio 1..4
                         {
 							if (audiolang_prio < audiolang_prio_act)								// better prio found
-							{
+								audiolangac3_pid = audiolang_pid = -1;
+							if (audiolang_prio <= audiolang_prio_act)								// better prio found
+							{	
 								audiolang_prio_act = audiolang_prio;
 								if (private_stream_is_ac3)
 								{
-									if (audiolangac3_pid == -1)		
-									{
-										audiolang_pid= audiolangac3_pid = es_pid;					// first AC3 with language
-										audiolang_choose = stream_language;
-									}
+									audiolangac3_pid = es_pid;										// first AC3 with language
+									audiolangac3_choose = stream_language;
 								}
 								else
-									if (audiolang_pid == -1)			
-									{
-										audiolang_pid = es_pid;										// first with language
-										audiolang_choose = stream_language;
-									}
+								{
+									audiolang_pid = es_pid;											// first with language
+									audiolang_choose = stream_language;
+								}
 							}
 						}
 
@@ -591,6 +589,13 @@ bool MpegTS::read_pmt(int filter_pid)
 
 next_descriptor_entry:
 			es_data_offset += es_data_skip + esinfo_length;
+		}
+
+
+		if (audiolangac3_pid != -1)
+		{	
+			audiolang_pid = audiolangac3_pid;
+			audiolang_choose = audiolangac3_choose;
 		}
 
 		if (audiolang_pid != -1)
