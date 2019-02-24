@@ -75,7 +75,7 @@ ClientSocket::ClientSocket(int fd_in,
 		StreamingParameters::const_iterator spit;
 
 		int arg1;
-		pid_ch_tmp = 1;			
+		pid_ch_tmp = 1;
 
 		arg1 = fcntl(fd, F_GETFL, 0);
 		if(fcntl(fd, F_SETFL, arg1 | O_NONBLOCK))
@@ -350,7 +350,7 @@ ClientSocket::ClientSocket(int fd_in,
 			Util::vlog("ClientSocket: file streaming request");
 			(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, config_map);
 			Util::vlog("ClientSocket: file streaming ends");
-			
+
 			_exit(0);
 		}
 
@@ -363,11 +363,11 @@ ClientSocket::ClientSocket(int fd_in,
 			}
 
 			pid_ch_tmp = fork();
-		 	if (*pid_ch == 0)
+			if (*pid_ch == 0)
 			{ 	filename = urlparams["file"];
 				*pid_ch = pid_ch_tmp;
 			}
-		
+
 			if (pid_ch_tmp)
 				return;
 
@@ -521,7 +521,7 @@ ClientSocket::ClientSocket(int fd_in,
 
 				}
 			}
-			_exit(0);	
+			_exit(0);
 		}
 
 		throw(http_trap(string("unknown url: ") + urlparams[""], 404, "Not found"));

@@ -34,20 +34,20 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(string file, int socket_fd, str
 {
 	PidMap::const_iterator it;
 	PidMap			pids, encoder_pids;
-	int			encoder_fd, timeout;
+	int				encoder_fd, timeout;
 	size_t			max_fill_socket = 0;
 	ssize_t			bytes_read;
-	struct pollfd		pfd[2];
+	struct pollfd	pfd[2];
 	off_t			file_offset = 0;
-	int			time_offset_s = 0;
+	int				time_offset_s = 0;
 	off_t			byte_offset = 0;
 	off_t			http_range = 0;
-	int			pct_offset = 0;
+	int				pct_offset = 0;
 	string			audio_lang;
 	bool			partial = false;
 	encoder_state_t	encoder_state;
 	Queue			socket_queue(1024 * 1024);
-	const char *	http_ok		=	"HTTP/1.1 200 OK\r\n";
+	const char *	http_ok			=	"HTTP/1.1 200 OK\r\n";
 	const char *	http_partial	=	"HTTP/1.1 206 Partial Content\r\n";
 	const char *	http_headers	=	"Connection: Close\r\n"
 										"Content-Type: video/mpeg\r\n"
@@ -168,7 +168,7 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(string file, int socket_fd, str
 	{
 		if(parent_signal)
 		{
-        		Util::vlog("streamproxy: broadcom file transcoding received signal %d ",parent_signal);
+			Util::vlog("streamproxy: broadcom file transcoding received signal %d ",parent_signal);
 			break;
 		}
 

@@ -348,7 +348,7 @@ bool MpegTS::read_pat()
 
 			if(entry[current].reserved != 0x07)
 			{
-				//Util::vlog("MpegTS::read_pat > reserved != 0x07: 0x%x", entry[current].reserved);
+				Util::vlog("MpegTS::read_pat > reserved != 0x07: 0x%x", entry[current].reserved);
 				goto next_pat_entry;
 			}
 
@@ -368,16 +368,16 @@ next_pat_entry:
 static	int getselectedlang_prio(string stream_language, string audiolang)				// audiolang has struct  aaa bbb ccc/ddd eee fff/ggg hhh iii/jjj
 {	std::vector <std::string> 	autolangprios_vector;									// aaa bbb ccc: Prio 1 languages
 	std::vector <std::string>	autolang_vector;										// ddd eee fff: Prio 2 languages
-	int							prio;													// ggg hhh iii: Prio 3 languages	
+	int							prio;													// ggg hhh iii: Prio 3 languages
 																						// jjj: Prio 4 languages
-																						// if one ound in streamlang then returns prio 1..4	
+																						// if one found in streamlang then returns prio 1..4
     boost::split(autolangprios_vector, audiolang, boost::is_any_of("/"));
 	prio = 1;
 	for(auto& autolang: autolangprios_vector)
 	{
 		if (!autolang.empty())
-		{	
-			//Util::vlog("MpegTS::getselectedlang: selected languages prio %d: %s", prio, autolang.c_str());	
+		{
+			//Util::vlog("MpegTS::getselectedlang: selected languages prio %d: %s", prio, autolang.c_str());
 			boost::split(autolang_vector, autolang, boost::is_any_of(" \t"));
 			for(auto &singlelang: autolang_vector)
 				if (!singlelang.empty())
@@ -388,22 +388,22 @@ static	int getselectedlang_prio(string stream_language, string audiolang)				// 
 		}
 		prio++;
 	}
-			
+
 	return 255;
 }
-	
+
 
 bool MpegTS::read_pmt(int filter_pid)
 {
-	int			attempt, programinfo_length, esinfo_length;
-	int			es_pid, es_data_length, es_data_skip, es_data_offset;
-	int			ds_data_skip, ds_data_offset;
-	bool		private_stream_is_ac3;
-	bool		private_stream_is_audio;
-	int			audioac3_pid, audiolang_pid, audiolangac3_pid;	
-	int			audiolang_prio, audiolang_prio_act;
-	string     	audiolang_choose, audiolangac3_choose, audiolang_fallback;
-	string		stream_language;
+	int		attempt, programinfo_length, esinfo_length;
+	int		es_pid, es_data_length, es_data_skip, es_data_offset;
+	int		ds_data_skip, ds_data_offset;
+	bool	private_stream_is_ac3;
+	bool	private_stream_is_audio;
+	int		audioac3_pid, audiolang_pid, audiolangac3_pid;
+	int		audiolang_prio, audiolang_prio_act;
+	string	audiolang_choose, audiolangac3_choose, audiolang_fallback;
+	string	stream_language;
 
 
 	const	uint8_t			*es_data;
@@ -428,7 +428,7 @@ bool MpegTS::read_pmt(int filter_pid)
 
 		if(pmt_header->reserved_1 != 0x07)
 		{
-			//Util::vlog("MpegTS::read_pmt > reserved_1: 0x%x", pmt_header->reserved_1);
+			Util::vlog("MpegTS::read_pmt > reserved_1: 0x%x", pmt_header->reserved_1);
 			continue;
 		}
 
@@ -437,13 +437,13 @@ bool MpegTS::read_pmt(int filter_pid)
 
 		if(pmt_header->unused != 0x00)
 		{
-			//Util::vlog("MpegTS::read_pmt: > unused: 0x%x", pmt_header->unused);
+			Util::vlog("MpegTS::read_pmt: > unused: 0x%x", pmt_header->unused);
 			continue;
 		}
 
 		if(pmt_header->reserved_2 != 0x0f)
 		{
-			//Util::vlog("MpegTS::read_pmt: > reserved_2: 0x%x", pmt_header->reserved_2);
+			Util::vlog("MpegTS::read_pmt: > reserved_2: 0x%x", pmt_header->reserved_2);
 			continue;
 		}
 
@@ -459,21 +459,21 @@ bool MpegTS::read_pmt(int filter_pid)
 
 			if(es_entry->reserved_1 != 0x07)
 			{
-				//Util::vlog("MpegTS::read_pmt: reserved 1: 0x%x", es_entry->reserved_1);
+				Util::vlog("MpegTS::read_pmt: reserved 1: 0x%x", es_entry->reserved_1);
 				goto next_descriptor_entry;
 			}
 
-			//Util::vlog("MpegTS::read_pmt: >> pid: 0x%x, %d", es_pid, es_pid);
+			//Util::vlog("MpegTS::read_pmt: >> pid: 0x%x", es_pid);
 
 			if(es_entry->reserved_2 != 0x0f)
 			{
-				//Util::vlog("MpegTS::read_pmt: reserved 2: 0x%x", es_entry->reserved_2);
+				Util::vlog("MpegTS::read_pmt: reserved 2: 0x%x", es_entry->reserved_2);
 				goto next_descriptor_entry;
 			}
 
 			if(es_entry->unused != 0x00)
 			{
-				//Util::vlog("MpegTS::read_pmt: unused: 0x%x", es_entry->unused);
+				Util::vlog("MpegTS::read_pmt: unused: 0x%x", es_entry->unused);
 				goto next_descriptor_entry;
 			}
 
@@ -514,7 +514,7 @@ bool MpegTS::read_pmt(int filter_pid)
 						{
 								ds_a = (const pmt_ds_a_t *)&ds_entry->data;
 								//Util::vlog("MpegTS::read_pmt: >>>> lang: %c%c%c [%d]", ds_a->lang[0],
-								//		 ds_a->lang[1], ds_a->lang[2], ds_a->code);
+										// ds_a->lang[1], ds_a->lang[2], ds_a->code);
 
 								stream_language.assign((const char *)&ds_a->lang, offsetof(pmt_ds_a_t, code));
 
@@ -554,7 +554,7 @@ bool MpegTS::read_pmt(int filter_pid)
 							if (audiolang_prio < audiolang_prio_act)								// better prio found
 								audiolangac3_pid = audiolang_pid = -1;
 							if (audiolang_prio <= audiolang_prio_act)								// better prio found
-							{	
+							{
 								audiolang_prio_act = audiolang_prio;
 								if (private_stream_is_ac3)
 								{
@@ -570,10 +570,10 @@ bool MpegTS::read_pmt(int filter_pid)
 						}
 
 						if(private_stream_is_ac3)
-						{	
+						{
 							if (audioac3_pid == -1)
 							{
-           						audio_pid = audioac3_pid = es_pid;							// first AC3 Audio
+								audio_pid = audioac3_pid = es_pid;							// first AC3 Audio
 								audiolang_fallback = stream_language;
 							}
 							else
@@ -593,7 +593,7 @@ next_descriptor_entry:
 
 
 		if (audiolangac3_pid != -1)
-		{	
+		{
 			audiolang_pid = audiolangac3_pid;
 			audiolang_choose = audiolangac3_choose;
 		}
@@ -604,7 +604,7 @@ next_descriptor_entry:
 			Util::vlog("MpegTS::=> choose audiolang [%s] with prio %d, pid: %d", audiolang_choose.c_str(), audiolang_prio_act, audio_pid); 
 		}
 		else
-		{ 
+		{
 			if (audio_pid != -1)
 				Util::vlog("MpegTS::=> no audiolang [%s] found, use audiolang [%s]: pid: %d", audiolang.c_str(), audiolang_fallback.c_str(), audio_pid); 
 		}
