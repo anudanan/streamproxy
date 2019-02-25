@@ -549,8 +549,8 @@ bool MpegTS::read_pmt(int filter_pid)
 
 					if (private_stream_is_audio && !(boost::iequals(stream_language, "nar")) )
 					{
-                        if((audiolang_prio = getselectedlang_prio(stream_language, audiolang)) > 0)	// if audiolang found with prio 1..4
-                        {
+						if((audiolang_prio = getselectedlang_prio(stream_language, audiolang)) > 0)	// if audiolang found with prio 1..4
+						{
 							if (audiolang_prio < audiolang_prio_act)								// better prio found
 								audiolangac3_pid = audiolang_pid = -1;
 							if (audiolang_prio <= audiolang_prio_act)								// better prio found
