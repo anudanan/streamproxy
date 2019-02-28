@@ -72,7 +72,9 @@ static void reexec(void)
 	}
 }
 
-pid_t	pid_child=0;
+
+
+pid_t					pid_child=0;
 
 static void sigchld(int) // prevent Z)ombie processes
 {

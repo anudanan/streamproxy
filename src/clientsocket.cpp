@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <linux/sockios.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <poll.h>
@@ -34,6 +35,28 @@
 using std::string;
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/trim.hpp>
+
+
+string get_addr (int fd)
+{	socklen_t len;
+	struct sockaddr_storage addr;
+	char ipstr[INET6_ADDRSTRLEN];
+
+	len = sizeof addr;
+	getpeername(fd, (struct sockaddr*)&addr, &len);
+	if (addr.ss_family == AF_INET)
+	{
+    	struct sockaddr_in *s = (struct sockaddr_in *)&addr;
+		inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
+	}
+	else
+	{
+		struct sockaddr_in6 *s = (struct sockaddr_in6 *)&addr;
+		inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
+	}
+	return ipstr;
+}
+
 
 ClientSocket::ClientSocket(int fd_in,
 		default_streaming_action default_action,
@@ -56,7 +79,9 @@ ClientSocket::ClientSocket(int fd_in,
 	try
 	{
 		static char			read_buffer[1024];
-		static string			filename = "";
+		static string		filename = "";
+		static string		client_addr_old = "";
+		string				client_addr_new;
 		ssize_t				bytes_read;
 		size_t				idx = string::npos;
 		string				header, cookie, value;
@@ -232,7 +257,9 @@ ClientSocket::ClientSocket(int fd_in,
 
 			password = user.substr(idx + 1);
 			user = user.substr(0, idx);
-
+			
+			client_addr_new = get_addr(fd);
+			Util::vlog("ClientSocket: from client ip: %s", client_addr_new.c_str());
 			Util::vlog("ClientSocket: authentication: %s,%s", user.c_str(), password.c_str());
 
 			if(!validate_user(user, password, config_map.at("group").string_value))
@@ -355,9 +382,8 @@ ClientSocket::ClientSocket(int fd_in,
 		}
 
 		if((urlparams[""] == "/file") && urlparams.count("file"))
-		{
-			if (*pid_ch && (filename == urlparams["file"]))
-			{ 	Util::vlog("streamproxy: sends SIGTERM to child pid %d", *pid_ch);
+		{	if (*pid_ch && (filename == urlparams["file"]) && (client_addr_old == client_addr_new ))
+			{ 	Util::vlog("streamproxy: detect seeking from the same client, sends SIGTERM to child pid %d", *pid_ch);
 				kill(*pid_ch, SIGTERM);
 				*pid_ch = 0;
 			}
@@ -365,6 +391,7 @@ ClientSocket::ClientSocket(int fd_in,
 			pid_ch_tmp = fork();
 			if (*pid_ch == 0)
 			{ 	filename = urlparams["file"];
+				client_addr_old = client_addr_new;
 				*pid_ch = pid_ch_tmp;
 			}
 
