@@ -8,18 +8,10 @@
 #include <sys/types.h>
 #include <string.h>
 
-typedef struct
-{   std::string filename;
-    std::string addr;
-    pid_t       pid;
-} clientparam;
-
-#define CLIENTMAX 	16
-
-static clientparam	clients[CLIENTMAX];
+ClientUtil	clientutil;		// global class for client seek detection
 
 
-void ClientUtil::init()
+ClientUtil::ClientUtil()	// Init
 {
 	for (unsigned i=0; i < CLIENTMAX; ++i)
 	{

@@ -314,7 +314,7 @@ ClientSocket::ClientSocket(int fd_in,
 			pid_ch_tmp = fork();
 			if (pid_ch_tmp)
 			{
-				ClientUtil::create(pid_ch_tmp, "", client_addr);
+				clientutil.create(pid_ch_tmp, "", client_addr);
 				return;
 			}
 			Service service(urlparams["service"]);
@@ -330,7 +330,7 @@ ClientSocket::ClientSocket(int fd_in,
 			pid_ch_tmp = fork();
 			if (pid_ch_tmp)
 			{
-				ClientUtil::create(pid_ch_tmp, "",client_addr);
+				clientutil.create(pid_ch_tmp, "",client_addr);
 				return;
 			}
 			Service service(urlparams["service"]);
@@ -369,7 +369,7 @@ ClientSocket::ClientSocket(int fd_in,
 			pid_ch_tmp = fork();
 			if (pid_ch_tmp)
 			{
-				ClientUtil::create(pid_ch_tmp, "",client_addr);
+				clientutil.create(pid_ch_tmp, "",client_addr);
 				return;
 			}
 			Util::vlog("ClientSocket: file streaming request");
@@ -380,7 +380,7 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if((urlparams[""] == "/file") && urlparams.count("file"))
 		{
-			pid_t chpid =ClientUtil::find(urlparams["file"], client_addr);
+			pid_t chpid =clientutil.find(urlparams["file"], client_addr);
 			if (chpid != 0)
 			{ 	Util::vlog("streamproxy: detect seeking from the same client, sends SIGTERM to child pid %d", chpid);
 				kill(chpid, SIGTERM);
@@ -388,7 +388,7 @@ ClientSocket::ClientSocket(int fd_in,
 			pid_ch_tmp = fork();
 			if (pid_ch_tmp)
 			{
-				ClientUtil::create(pid_ch_tmp, urlparams["file"], client_addr);
+				clientutil.create(pid_ch_tmp, urlparams["file"], client_addr);
 				return;
 			}
 
@@ -456,7 +456,7 @@ ClientSocket::ClientSocket(int fd_in,
 			pid_ch_tmp = fork();
 			if (pid_ch_tmp)
 			{
-				ClientUtil::create(pid_ch_tmp, "", client_addr);
+				clientutil.create(pid_ch_tmp, "", client_addr);
 				return;
 			}
 			if((urlparams[""].substr(1, 1) == "/"))
