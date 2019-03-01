@@ -31,11 +31,12 @@ class ClientSocket
 		ClientSocket();
 		ClientSocket(const ClientSocket &);
 
-		bool	get_feature_value(std::string, std::string,
+		bool		get_feature_value(std::string, std::string,
 								std::string &, std::string &)	const;
-		void	check_add_defaults_from_config();
-		void	check_add_urlparams();
-		void	add_default_params();
+		void		check_add_defaults_from_config();
+		void		check_add_urlparams();
+		void		add_default_params();
+		std::string	get_addr(int);
 
 		static const std::string	base64_chars;
 		static bool 				is_base64(uint8_t c);

@@ -38,27 +38,6 @@ using std::string;
 #include <boost/algorithm/string/trim.hpp>
 
 
-static string get_addr (int fd)
-{	socklen_t len;
-	struct sockaddr_storage addr;
-	char ipstr[INET6_ADDRSTRLEN];
-
-	len = sizeof addr;
-	getpeername(fd, (struct sockaddr*)&addr, &len);
-	if (addr.ss_family == AF_INET)
-	{
-		struct sockaddr_in *s = (struct sockaddr_in *)&addr;
-		inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
-	}
-	else
-	{
-		struct sockaddr_in6 *s = (struct sockaddr_in6 *)&addr;
-		inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
-	}
-	return ipstr;
-}
-
-
 ClientSocket::ClientSocket(int fd_in,
 		default_streaming_action default_action,
 		const ConfigMap &config_map_in,
@@ -73,7 +52,7 @@ ClientSocket::ClientSocket(int fd_in,
 		"Accept-Ranges: bytes\r\n"
 		"\r\n";
 
-	pid_t					pid_ch_tmp = 1;
+	pid_t					pid_child = 1;
 
 	string	reply, message;
 	try
@@ -99,7 +78,7 @@ ClientSocket::ClientSocket(int fd_in,
 		StreamingParameters::const_iterator spit;
 
 		int arg1;
-		pid_ch_tmp = 1;
+		pid_child = 1;
 
 		arg1 = fcntl(fd, F_GETFL, 0);
 		if(fcntl(fd, F_SETFL, arg1 | O_NONBLOCK))
@@ -309,14 +288,61 @@ ClientSocket::ClientSocket(int fd_in,
 		for(spit = streaming_parameters.begin(); spit != streaming_parameters.end(); spit++)
 			Util::vlog("    %s = %s", spit->first.c_str(), spit->second.c_str());
 
-		if((urlparams[""] == "/livestream") && urlparams.count("service"))
+		if((urlparams[""] == "/file") && urlparams.count("file"))
 		{
-			pid_ch_tmp = fork();
-			if (pid_ch_tmp)
+			pid_t chpid =clientutil.find(urlparams["file"], client_addr);
+			if (chpid != 0)
+			{ 	Util::vlog("streamproxy: detect seeking from the same client, sends SIGTERM to child pid %d", chpid);
+				kill(chpid, SIGTERM);
+			}
+			pid_child = fork();
+			if (pid_child)
 			{
-				clientutil.create(pid_ch_tmp, "", client_addr);
+				clientutil.create(pid_child, urlparams["file"], client_addr);
 				return;
 			}
+			Util::vlog("ClientSocket: file transcoding request");
+
+			switch(stb_traits.transcoding_type)
+			{
+				case(stb_transcoding_broadcom):
+				{
+					Util::vlog("ClientSocket: transcoding service broadcom");
+					(void)FileTranscodingBroadcom(urlparams["file"], fd, webauth, stb_traits, streaming_parameters, config_map);
+					break;
+				}
+
+				case(stb_transcoding_enigma):
+				{
+					string service(string("1:0:1:0:0:0:0:0:0:0:") + Url(urlparams.at("file")).encode());
+
+					Util::vlog("ClientSocket: transcoding service enigma");
+					(void)TranscodingEnigma(service, fd, webauth, stb_traits, streaming_parameters);
+					break;
+				}
+
+				default:
+				{
+					throw(http_trap(string("not a supported stb for transcoding"), 400, "Bad request"));
+				}
+			}
+
+			Util::vlog("ClientSocket: file transcoding ends");
+
+			_exit(0);
+		}
+		else
+		{
+			pid_child = fork();
+			if (pid_child)
+			{
+				clientutil.create(pid_child, "", client_addr);
+				return;
+			}
+		}
+
+		if((urlparams[""] == "/livestream") && urlparams.count("service"))
+		{
 			Service service(urlparams["service"]);
 
 			Util::vlog("ClientSocket: live streaming request");
@@ -327,12 +353,6 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if((urlparams[""] == "/live") && urlparams.count("service"))
 		{
-			pid_ch_tmp = fork();
-			if (pid_ch_tmp)
-			{
-				clientutil.create(pid_ch_tmp, "",client_addr);
-				return;
-			}
 			Service service(urlparams["service"]);
 
 			Util::vlog("ClientSocket: live transcoding request");
@@ -366,60 +386,9 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if((urlparams[""] == "/filestream") && urlparams.count("file"))
 		{
-			pid_ch_tmp = fork();
-			if (pid_ch_tmp)
-			{
-				clientutil.create(pid_ch_tmp, "",client_addr);
-				return;
-			}
 			Util::vlog("ClientSocket: file streaming request");
 			(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, config_map);
 			Util::vlog("ClientSocket: file streaming ends");
-			_exit(0);
-		}
-
-		if((urlparams[""] == "/file") && urlparams.count("file"))
-		{
-			pid_t chpid =clientutil.find(urlparams["file"], client_addr);
-			if (chpid != 0)
-			{ 	Util::vlog("streamproxy: detect seeking from the same client, sends SIGTERM to child pid %d", chpid);
-				kill(chpid, SIGTERM);
-			}
-			pid_ch_tmp = fork();
-			if (pid_ch_tmp)
-			{
-				clientutil.create(pid_ch_tmp, urlparams["file"], client_addr);
-				return;
-			}
-
-			Util::vlog("ClientSocket: file transcoding request");
-
-			switch(stb_traits.transcoding_type)
-			{
-				case(stb_transcoding_broadcom):
-				{
-					Util::vlog("ClientSocket: transcoding service broadcom");
-					(void)FileTranscodingBroadcom(urlparams["file"], fd, webauth, stb_traits, streaming_parameters, config_map);
-					break;
-				}
-
-				case(stb_transcoding_enigma):
-				{
-					string service(string("1:0:1:0:0:0:0:0:0:0:") + Url(urlparams.at("file")).encode());
-
-					Util::vlog("ClientSocket: transcoding service enigma");
-					(void)TranscodingEnigma(service, fd, webauth, stb_traits, streaming_parameters);
-					break;
-				}
-
-				default:
-				{
-					throw(http_trap(string("not a supported stb for transcoding"), 400, "Bad request"));
-				}
-			}
-
-			Util::vlog("ClientSocket: file transcoding ends");
-
 			_exit(0);
 		}
 
@@ -448,17 +417,11 @@ ClientSocket::ClientSocket(int fd_in,
 
 			write(fd, reply.c_str(), reply.length());
 
-			return;
+			_exit(0);
 		}
 
 		if(urlparams[""].length() > 1)
 		{
-			pid_ch_tmp = fork();
-			if (pid_ch_tmp)
-			{
-				clientutil.create(pid_ch_tmp, "", client_addr);
-				return;
-			}
 			if((urlparams[""].substr(1, 1) == "/"))
 			{
 				Util::vlog("ClientSocket: default file request");
@@ -557,7 +520,7 @@ ClientSocket::ClientSocket(int fd_in,
 		Util::vlog("ClientSocket: http_trap: %s (%d: %s)", e.what(), e.http_error, message.c_str());
 
 		write(fd, reply.c_str(), reply.length());
-		if (pid_ch_tmp == 0)
+		if (pid_child == 0)
 			_exit(0);
 
 	}
@@ -567,7 +530,7 @@ ClientSocket::ClientSocket(int fd_in,
 		reply += http_error_headers;
 		Util::vlog("ClientSocket: trap: %s", e.what());
 		write(fd, reply.c_str(), reply.length());
-		if (pid_ch_tmp == 0)
+		if (pid_child == 0)
 			_exit(0);
 	}
 	catch(...)
@@ -576,7 +539,7 @@ ClientSocket::ClientSocket(int fd_in,
 		reply += http_error_headers;
 		Util::vlog("ClientSocket: unknown exception");
 		write(fd, reply.c_str(), reply.length());
-		if (pid_ch_tmp == 0)
+		if (pid_child == 0)
 			_exit(0);
 	}
 }
@@ -987,4 +950,24 @@ void ClientSocket::check_add_urlparams()
 		else
 			Util::vlog("clientsocket: reject streaming specific param %s = %s", param.c_str(), value.c_str());
 	}
+}
+
+std::string ClientSocket::get_addr(int sock)
+{	socklen_t len;
+	struct sockaddr_storage addr;
+	char ipstr[INET6_ADDRSTRLEN];
+
+	len = sizeof addr;
+	getpeername(sock, (struct sockaddr*)&addr, &len);
+	if (addr.ss_family == AF_INET)
+	{
+		struct sockaddr_in *s = (struct sockaddr_in *)&addr;
+		inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
+	}
+	else
+	{
+		struct sockaddr_in6 *s = (struct sockaddr_in6 *)&addr;
+		inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
+	}
+	return ipstr;
 }

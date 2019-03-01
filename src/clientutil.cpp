@@ -34,7 +34,7 @@ bool ClientUtil::create(pid_t pid, std::string filename, std::string addr)
 		}
 	return false;
 }
-	
+
 
 bool ClientUtil::erase(pid_t pid)
 {
