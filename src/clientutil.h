@@ -6,10 +6,14 @@
 #include <sys/types.h>
 #include <string>
 
-bool	clientutilnew(pid_t pid, std::string filename, std::string addr);
-bool	clientutildelete(pid_t pid);
-pid_t	clientutilfind(std::string filename, std::string addr);
-int		clientutilcount();
-void	clientutilinit();
+class	ClientUtil
+{
+	public:
+		static	bool	create(pid_t pid, std::string filename, std::string addr);
+		static	bool	erase(pid_t pid);
+		static	pid_t	find(std::string filename, std::string addr);
+		static	int		count();
+		static	void	init();
+};
 
 #endif

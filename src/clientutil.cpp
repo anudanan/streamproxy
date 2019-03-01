@@ -1,5 +1,6 @@
 #include "util.h"
 #include "types.h"
+#include "clientutil.h"
 
 #include <stdint.h>
 #include <unistd.h>
@@ -18,7 +19,7 @@ typedef struct
 static clientparam	clients[CLIENTMAX];
 
 
-void clientutilinit()
+void ClientUtil::init()
 {
 	for (unsigned i=0; i < CLIENTMAX; ++i)
 	{
@@ -29,7 +30,7 @@ void clientutilinit()
 }
 
 
-bool clientutilnew(pid_t pid, std::string filename, std::string addr)
+bool ClientUtil::create(pid_t pid, std::string filename, std::string addr)
 {
 	for (unsigned i=0; i < CLIENTMAX; ++i)
 		if (clients[i].pid == 0)
@@ -43,7 +44,7 @@ bool clientutilnew(pid_t pid, std::string filename, std::string addr)
 }
 	
 
-bool clientutildelete(pid_t pid)
+bool ClientUtil::erase(pid_t pid)
 {
 	for (unsigned i=0; i < CLIENTMAX; ++i)
 		if (clients[i].pid == pid)
@@ -58,7 +59,7 @@ bool clientutildelete(pid_t pid)
 }
 
 
-int clientutilcount()
+int ClientUtil::count()
 {
 	unsigned j = 0;
 	for (unsigned i=0; i < CLIENTMAX; ++i)
@@ -68,7 +69,7 @@ int clientutilcount()
 }
 
 
-pid_t clientutilfind(std::string filename, std::string addr)
+pid_t ClientUtil::find(std::string filename, std::string addr)
 {
 	for (unsigned i=0; i < CLIENTMAX; ++i)
 		if ((clients[i].addr == addr) && (clients[i].filename == filename ))

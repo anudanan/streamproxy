@@ -86,7 +86,7 @@ static void sigchld(int) // prevent Z)ombie processes
 
 	Util::vlog("streamproxy: pid %d exited", infop.si_pid);
 
-	clientutildelete(infop.si_pid);
+	ClientUtil::erase(infop.si_pid);
 
 	if(infop.si_pid)
 	{
@@ -173,7 +173,7 @@ int main(int argc, char *const argv[], char *const arge[])
 		const stb_id_t							*traits_id;
 
 		positional_options.add("listen", -1);
-		clientutilinit();
+		ClientUtil::init();
 
 		options.add_options()
 			("foreground,f",	bpo::bool_switch(&Util::foreground)->implicit_value(true),		"run in foreground (don't become a daemon)")
@@ -340,7 +340,7 @@ int main(int argc, char *const argv[], char *const arge[])
 
 			if(pfd[0].revents & POLLIN)
 			{
-				if (clientutilcount() == 0)
+				if (ClientUtil::count() == 0)
 				{
 					Util::vlog("streamproxy: config file change detected, no clients acitve, restarting");
 					reexec();
