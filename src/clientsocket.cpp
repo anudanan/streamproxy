@@ -58,7 +58,6 @@ ClientSocket::ClientSocket(int fd_in,
 	try
 	{
 		static char			read_buffer[1024];
-		static string		filename = "";
 		string				client_addr;
 		ssize_t				bytes_read;
 		size_t				idx = string::npos;
@@ -953,7 +952,8 @@ void ClientSocket::check_add_urlparams()
 }
 
 std::string ClientSocket::get_addr(int sock)
-{	socklen_t len;
+{
+	socklen_t len;
 	struct sockaddr_storage addr;
 	char ipstr[INET6_ADDRSTRLEN];
 
