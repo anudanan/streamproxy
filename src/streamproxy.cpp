@@ -3,6 +3,7 @@
 
 #include "acceptsocket.h"
 #include "clientsocket.h"
+#include "clientutil.h"
 #include "util.h"
 #include "configmap.h"
 #include "enigma_settings.h"
@@ -74,7 +75,6 @@ static void reexec(void)
 
 
 
-pid_t					pid_child=0;
 
 static void sigchld(int) // prevent Z)ombie processes
 {
@@ -86,8 +86,7 @@ static void sigchld(int) // prevent Z)ombie processes
 
 	Util::vlog("streamproxy: pid %d exited", infop.si_pid);
 
-	if (pid_child == infop.si_pid)
-		pid_child = 0;
+	clientutildelete(infop.si_pid);
 
 	if(infop.si_pid)
 	{
@@ -107,7 +106,7 @@ static void sigchld(int) // prevent Z)ombie processes
 static string getaudiolang(string option_default_audiolang)										// if audiolang in streamproxy.conf is xxx oder empty
 {	string				audiolang = "";															// then user the enigma autolanguage parameters
 	EnigmaSettings		settings;																// build a string with / as a delimiter between
-																								// the autolanguage parameters for later use//
+																								// the autolanguage parameters for later use
 	if((option_default_audiolang.compare("xxx")==0) || option_default_audiolang.empty())
 	{
 		if(settings.exists("config.autolanguage.audio_autoselect1"))
@@ -174,6 +173,7 @@ int main(int argc, char *const argv[], char *const arge[])
 		const stb_id_t							*traits_id;
 
 		positional_options.add("listen", -1);
+		clientutilinit();
 
 		options.add_options()
 			("foreground,f",	bpo::bool_switch(&Util::foreground)->implicit_value(true),		"run in foreground (don't become a daemon)")
@@ -340,9 +340,9 @@ int main(int argc, char *const argv[], char *const arge[])
 
 			if(pfd[0].revents & POLLIN)
 			{
-				if (pid_child == 0)
+				if (clientutilcount() == 0)
 				{
-					Util::vlog("streamproxy: config file change detected, restarting");
+					Util::vlog("streamproxy: config file change detected, no clients acitve, restarting");
 					reexec();
 				}
 				else
@@ -369,7 +369,7 @@ int main(int argc, char *const argv[], char *const arge[])
 				Util::vlog("streamproxy: accept new connection on port %s, default action: %s, fd %d",
 						it2->first.c_str(), action_name[it2->second.default_action], new_socket);
 
-				(void)ClientSocket(new_socket, it2->second.default_action, config_map, *stb_traits, &pid_child);
+				(void)ClientSocket(new_socket, it2->second.default_action, config_map, *stb_traits);
 				close(new_socket);
 
 				usleep(100000); // runaway protection

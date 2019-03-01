@@ -601,12 +601,12 @@ next_descriptor_entry:
 		if (audiolang_pid != -1)
 		{
 			audio_pid = audiolang_pid;              // language has preference
-			Util::vlog("MpegTS::=> choose audiolang [%s] with prio %d, pid: %d", audiolang_choose.c_str(), audiolang_prio_act, audio_pid); 
+			Util::vlog("MpegTS::=> choose audiolang [%s] with prio %d, pid: %d", audiolang_choose.c_str(), audiolang_prio_act, audio_pid);
 		}
 		else
 		{
 			if (audio_pid != -1)
-				Util::vlog("MpegTS::=> no audiolang [%s] found, use audiolang [%s]: pid: %d", audiolang.c_str(), audiolang_fallback.c_str(), audio_pid); 
+				Util::vlog("MpegTS::=> no audiolang [%s] found, use audiolang [%s]: pid: %d", audiolang.c_str(), audiolang_fallback.c_str(), audio_pid);
 		}
 
 		return(true);

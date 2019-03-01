@@ -13,6 +13,7 @@
 #include "types.h"
 #include "webrequest.h"
 #include "stbtraits.h"
+#include "clientutil.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -37,7 +38,7 @@ using std::string;
 #include <boost/algorithm/string/trim.hpp>
 
 
-string get_addr (int fd)
+static string get_addr (int fd)
 {	socklen_t len;
 	struct sockaddr_storage addr;
 	char ipstr[INET6_ADDRSTRLEN];
@@ -46,7 +47,7 @@ string get_addr (int fd)
 	getpeername(fd, (struct sockaddr*)&addr, &len);
 	if (addr.ss_family == AF_INET)
 	{
-    	struct sockaddr_in *s = (struct sockaddr_in *)&addr;
+		struct sockaddr_in *s = (struct sockaddr_in *)&addr;
 		inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
 	}
 	else
@@ -61,8 +62,7 @@ string get_addr (int fd)
 ClientSocket::ClientSocket(int fd_in,
 		default_streaming_action default_action,
 		const ConfigMap &config_map_in,
-		const stb_traits_t &stb_traits_in,
-		pid_t *pid_ch)
+		const stb_traits_t &stb_traits_in)
 	:
 		fd(fd_in), config_map(config_map_in),
 		stb_traits(stb_traits_in)
@@ -73,15 +73,14 @@ ClientSocket::ClientSocket(int fd_in,
 		"Accept-Ranges: bytes\r\n"
 		"\r\n";
 
-	pid_t				pid_ch_tmp = 1;
+	pid_t					pid_ch_tmp = 1;
 
 	string	reply, message;
 	try
 	{
 		static char			read_buffer[1024];
 		static string		filename = "";
-		static string		client_addr_old = "";
-		string				client_addr_new;
+		string				client_addr;
 		ssize_t				bytes_read;
 		size_t				idx = string::npos;
 		string				header, cookie, value;
@@ -257,9 +256,8 @@ ClientSocket::ClientSocket(int fd_in,
 
 			password = user.substr(idx + 1);
 			user = user.substr(0, idx);
-			
-			client_addr_new = get_addr(fd);
-			Util::vlog("ClientSocket: from client ip: %s", client_addr_new.c_str());
+			client_addr = get_addr(fd);
+			Util::vlog("ClientSocket: from client ip: %s", client_addr.c_str());
 			Util::vlog("ClientSocket: authentication: %s,%s", user.c_str(), password.c_str());
 
 			if(!validate_user(user, password, config_map.at("group").string_value))
@@ -315,8 +313,8 @@ ClientSocket::ClientSocket(int fd_in,
 		{
 			pid_ch_tmp = fork();
 			if (pid_ch_tmp)
-			{ 	if (*pid_ch == 0)
-					*pid_ch = pid_ch_tmp;
+			{
+				clientutilnew(pid_ch_tmp, "", client_addr);
 				return;
 			}
 			Service service(urlparams["service"]);
@@ -331,8 +329,8 @@ ClientSocket::ClientSocket(int fd_in,
 		{
 			pid_ch_tmp = fork();
 			if (pid_ch_tmp)
-			{ 	if (*pid_ch == 0)
-					*pid_ch = pid_ch_tmp;
+			{
+				clientutilnew(pid_ch_tmp, "",client_addr);
 				return;
 			}
 			Service service(urlparams["service"]);
@@ -370,33 +368,29 @@ ClientSocket::ClientSocket(int fd_in,
 		{
 			pid_ch_tmp = fork();
 			if (pid_ch_tmp)
-			{ 	if (*pid_ch == 0)
-					*pid_ch = pid_ch_tmp;
+			{
+				clientutilnew(pid_ch_tmp, "",client_addr);
 				return;
 			}
 			Util::vlog("ClientSocket: file streaming request");
 			(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, config_map);
 			Util::vlog("ClientSocket: file streaming ends");
-
 			_exit(0);
 		}
 
 		if((urlparams[""] == "/file") && urlparams.count("file"))
-		{	if (*pid_ch && (filename == urlparams["file"]) && (client_addr_old == client_addr_new ))
-			{ 	Util::vlog("streamproxy: detect seeking from the same client, sends SIGTERM to child pid %d", *pid_ch);
-				kill(*pid_ch, SIGTERM);
-				*pid_ch = 0;
+		{
+			pid_t chpid =clientutilfind(urlparams["file"], client_addr);
+			if (chpid != 0)
+			{ 	Util::vlog("streamproxy: detect seeking from the same client, sends SIGTERM to child pid %d", chpid);
+				kill(chpid, SIGTERM);
 			}
-
 			pid_ch_tmp = fork();
-			if (*pid_ch == 0)
-			{ 	filename = urlparams["file"];
-				client_addr_old = client_addr_new;
-				*pid_ch = pid_ch_tmp;
-			}
-
 			if (pid_ch_tmp)
+			{
+				clientutilnew(pid_ch_tmp, urlparams["file"], client_addr);
 				return;
+			}
 
 			Util::vlog("ClientSocket: file transcoding request");
 
@@ -461,8 +455,8 @@ ClientSocket::ClientSocket(int fd_in,
 		{
 			pid_ch_tmp = fork();
 			if (pid_ch_tmp)
-			{ 	if (*pid_ch == 0)
-					*pid_ch = pid_ch_tmp;
+			{
+				clientutilnew(pid_ch_tmp, "", client_addr);
 				return;
 			}
 			if((urlparams[""].substr(1, 1) == "/"))

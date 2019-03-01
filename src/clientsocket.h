@@ -52,7 +52,7 @@ class ClientSocket
 
 		ClientSocket(int fd,
 				default_streaming_action default_action,
-				const ConfigMap &config_map, const stb_traits_t &, pid_t *pid_ch);
+				const ConfigMap &config_map, const stb_traits_t &);
 		~ClientSocket();
 };
 
