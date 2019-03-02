@@ -73,9 +73,6 @@ static void reexec(void)
 	}
 }
 
-
-
-
 static void sigchld(int) // prevent Z)ombie processes
 {
 	siginfo_t infop;
@@ -102,11 +99,18 @@ static void sigchld(int) // prevent Z)ombie processes
 		Util::vlog("streamproxy: sigchld called but no childeren to wait for");
 }
 
+/*
+	if audiolang in streamproxy.conf is xxx or empty
+	then user the enigma autolanguage parameters
+	build a string with / as a delimiter between
+	the autolanguage parameters for later use
+*/
 
-static string getaudiolang(string option_default_audiolang)										// if audiolang in streamproxy.conf is xxx oder empty
-{	string				audiolang = "";															// then user the enigma autolanguage parameters
-	EnigmaSettings		settings;																// build a string with / as a delimiter between
-																								// the autolanguage parameters for later use
+static string getaudiolang(string option_default_audiolang)
+{
+	string				audiolang = "";
+	EnigmaSettings		settings;
+
 	if((option_default_audiolang.compare("xxx")==0) || option_default_audiolang.empty())
 	{
 		if(settings.exists("config.autolanguage.audio_autoselect1"))
@@ -124,7 +128,6 @@ static string getaudiolang(string option_default_audiolang)										// if audio
 	//Util::vlog("streamproxy: audiolang: %s", audiolang.c_str());
 	return(audiolang);
 }
-
 
 int main(int argc, char *const argv[], char *const arge[])
 {

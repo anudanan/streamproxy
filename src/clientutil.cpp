@@ -10,7 +10,6 @@
 
 ClientUtil	clientutil;		// global class for client seek detection
 
-
 ClientUtil::ClientUtil()	// Init
 {
 	for (unsigned i=0; i < CLIENTMAX; ++i)
@@ -20,7 +19,6 @@ ClientUtil::ClientUtil()	// Init
 		clients[i].addr = "";
 	}
 }
-
 
 bool ClientUtil::create(pid_t pid, std::string filename, std::string addr)
 {
@@ -34,7 +32,6 @@ bool ClientUtil::create(pid_t pid, std::string filename, std::string addr)
 		}
 	return false;
 }
-
 
 bool ClientUtil::erase(pid_t pid)
 {
@@ -50,7 +47,6 @@ bool ClientUtil::erase(pid_t pid)
 	return false;
 }
 
-
 int ClientUtil::count()
 {
 	unsigned j = 0;
@@ -59,7 +55,6 @@ int ClientUtil::count()
 			++j;
 	return j;
 }
-
 
 pid_t ClientUtil::find(std::string filename, std::string addr)
 {
@@ -71,6 +66,3 @@ pid_t ClientUtil::find(std::string filename, std::string addr)
 		}
 	return 0;
 }
-
-
-

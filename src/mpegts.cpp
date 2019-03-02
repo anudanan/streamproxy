@@ -364,15 +364,24 @@ next_pat_entry:
 	return(false);
 }
 
+/*
+	audiolang has struct aaa bbb ccc/ddd eee fff/ggg hhh iii/jjj
+	aaa bbb ccc: Prio 1 languages
+	ddd eee fff: Prio 2 languages
+	ggg hhh iii: Prio 3 languages
+	jjj: Prio 4 languages
+	if one found in streamlang then returns prio 1..4
+*/
 
-static	int getselectedlang_prio(string stream_language, string audiolang)				// audiolang has struct  aaa bbb ccc/ddd eee fff/ggg hhh iii/jjj
-{	std::vector <std::string> 	autolangprios_vector;									// aaa bbb ccc: Prio 1 languages
-	std::vector <std::string>	autolang_vector;										// ddd eee fff: Prio 2 languages
-	int							prio;													// ggg hhh iii: Prio 3 languages
-																						// jjj: Prio 4 languages
-																						// if one found in streamlang then returns prio 1..4
-    boost::split(autolangprios_vector, audiolang, boost::is_any_of("/"));
+static	int getselectedlang_prio(string stream_language, string audiolang)
+{
+	std::vector <std::string> 	autolangprios_vector;
+	std::vector <std::string>	autolang_vector;
+	int							prio;
+
+	boost::split(autolangprios_vector, audiolang, boost::is_any_of("/"));
 	prio = 1;
+
 	for(auto& autolang: autolangprios_vector)
 	{
 		if (!autolang.empty())
@@ -382,16 +391,15 @@ static	int getselectedlang_prio(string stream_language, string audiolang)				// 
 			for(auto &singlelang: autolang_vector)
 				if (!singlelang.empty())
 				{
-                    if(boost::starts_with(stream_language, singlelang))					// if selected is prefix
+					if(boost::starts_with(stream_language, singlelang)) // if selected is prefix
 						return prio;
 				}
 		}
 		prio++;
 	}
 
-	return 256;
+	return(256);
 }
-
 
 bool MpegTS::read_pmt(int filter_pid)
 {
@@ -413,7 +421,7 @@ bool MpegTS::read_pmt(int filter_pid)
 	const	pmt_ds_a_t		*ds_a;
 
 	pcr_pid = video_pid = audio_pid = audioac3_pid = audiolang_pid = audiolangac3_pid = -1;
-	audiolang_prio_act = 255;															// lower prio than 1,2,3,4 for autolanguage.audio1-4
+	audiolang_prio_act = 255; // lower prio than 1,2,3,4 for autolanguage.audio 1 - 4
 	audiolang_choose = audiolangac3_choose = "";
 
 	for(attempt = 0; attempt < 16; attempt++)
@@ -498,7 +506,7 @@ bool MpegTS::read_pmt(int filter_pid)
 					private_stream_is_audio = true;
 					stream_language = "";
 
-					ds_data_skip = es_data_offset + offsetof(pmt_es_entry_t, descriptors); 
+					ds_data_skip = es_data_offset + offsetof(pmt_es_entry_t, descriptors);
 
 					for(ds_data_offset = 0; (ds_data_offset + 2) < esinfo_length; )
 					{
@@ -591,7 +599,6 @@ next_descriptor_entry:
 			es_data_offset += es_data_skip + esinfo_length;
 		}
 
-
 		if (audiolangac3_pid != -1)
 		{
 			audiolang_pid = audiolangac3_pid;
@@ -600,7 +607,7 @@ next_descriptor_entry:
 
 		if (audiolang_pid != -1)
 		{
-			audio_pid = audiolang_pid;              // language has preference
+			audio_pid = audiolang_pid; // language has preference
 			Util::vlog("MpegTS::=> choose audiolang [%s] with prio %d, pid: %d", audiolang_choose.c_str(), audiolang_prio_act, audio_pid);
 		}
 		else

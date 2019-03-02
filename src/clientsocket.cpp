@@ -37,7 +37,6 @@ using std::string;
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
-
 ClientSocket::ClientSocket(int fd_in,
 		default_streaming_action default_action,
 		const ConfigMap &config_map_in,
@@ -458,7 +457,6 @@ ClientSocket::ClientSocket(int fd_in,
 				}
 
 				Util::vlog("ClientSocket: default file ends");
-
 			}
 			else
 			{
