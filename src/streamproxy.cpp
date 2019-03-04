@@ -176,7 +176,6 @@ int main(int argc, char *const argv[], char *const arge[])
 		const stb_id_t							*traits_id;
 
 		positional_options.add("listen", -1);
-		//ClientUtil::init();
 
 		options.add_options()
 			("foreground,f",	bpo::bool_switch(&Util::foreground)->implicit_value(true),		"run in foreground (don't become a daemon)")
