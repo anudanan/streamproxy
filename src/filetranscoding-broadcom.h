@@ -6,6 +6,7 @@
 #include "types.h"
 #include "configmap.h"
 #include "stbtraits.h"
+#include "threadutil.h"
 
 #include <string>
 #include <sys/types.h>
@@ -33,10 +34,7 @@ class FileTranscodingBroadcom
 
 	public:
 
-		FileTranscodingBroadcom(std::string file, int socketfd, std::string webauth,
-				const stb_traits_t &stb_traits_in,
-				const StreamingParameters &streaming_parameters,
-				const ConfigMap &config_map);
+		FileTranscodingBroadcom(ThreadData *tdp);
 		~FileTranscodingBroadcom();
 };
 

@@ -13,7 +13,7 @@
 #include "types.h"
 #include "webrequest.h"
 #include "stbtraits.h"
-#include "clientutil.h"
+#include "threadutil.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -39,8 +39,8 @@ using std::string;
 
 ClientSocket::ClientSocket(int fd_in,
 		default_streaming_action default_action,
-		const ConfigMap &config_map_in,
-		const stb_traits_t &stb_traits_in)
+		const ConfigMap *config_map_in,
+		const stb_traits_t *stb_traits_in)
 	:
 		fd(fd_in), config_map(config_map_in),
 		stb_traits(stb_traits_in)
@@ -50,8 +50,6 @@ ClientSocket::ClientSocket(int fd_in,
 		"Connection: close\r\n"
 		"Accept-Ranges: bytes\r\n"
 		"\r\n";
-
-	pid_t					pid_child = 1;
 
 	string	reply, message;
 	try
@@ -76,7 +74,6 @@ ClientSocket::ClientSocket(int fd_in,
 		StreamingParameters::const_iterator spit;
 
 		int arg1;
-		pid_child = 1;
 
 		arg1 = fcntl(fd, F_GETFL, 0);
 		if(fcntl(fd, F_SETFL, arg1 | O_NONBLOCK))
@@ -212,7 +209,7 @@ ClientSocket::ClientSocket(int fd_in,
 		if(lines.size() < 1)
 			throw(http_trap("ClientSocket: invalid request", 400, "Bad request 2"));
 
-		if(config_map.at("auth").int_value)
+		if(config_map->at("auth").int_value)
 		{
 			if(!headers.count("authorization"))
 			{
@@ -237,7 +234,7 @@ ClientSocket::ClientSocket(int fd_in,
 			Util::vlog("ClientSocket: from client ip: %s", client_addr.c_str());
 			Util::vlog("ClientSocket: authentication: %s,%s", user.c_str(), password.c_str());
 
-			if(!validate_user(user, password, config_map.at("group").string_value))
+			if(!validate_user(user, password, config_map->at("group").string_value))
 				throw(http_trap("Invalid authentication", 403, "Forbidden, invalid authentication"));
 		}
 
@@ -288,25 +285,27 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if((urlparams[""] == "/file") && urlparams.count("file"))
 		{
-			pid_t chpid =clientutil.find(urlparams["file"], client_addr);
-			if (chpid != 0)
-			{ 	Util::vlog("streamproxy: detect seeking from the same client, sends SIGTERM to child pid %d", chpid);
-				kill(chpid, SIGTERM);
+			ThreadData *tdp =threadutil.findclientseek(urlparams["file"], client_addr, fd, streaming_parameters);
+			if (tdp != NULL)
+			{ 	Util::vlog("streamproxy: detect seeking from the same client, found thread %d for seeking", tdp->tid);
 			}
-			pid_child = fork();
-			if (pid_child)
+			else
 			{
-				clientutil.create(pid_child, urlparams["file"], client_addr);
-				return;
+				Util::vlog("ClientSocket: file transcoding request");
+				if (!threadutil.createfilejob(urlparams["file"], client_addr, fd, stb_traits, streaming_parameters, config_map))
+				{
+					Util::vlog("ClientSocket: no free thread for serving => abort");
+					close(fd);
+				}
 			}
-			Util::vlog("ClientSocket: file transcoding request");
+			return;
 
-			switch(stb_traits.transcoding_type)
+/*			switch(stb_traits->transcoding_type)
 			{
 				case(stb_transcoding_broadcom):
 				{
 					Util::vlog("ClientSocket: transcoding service broadcom");
-					(void)FileTranscodingBroadcom(urlparams["file"], fd, webauth, stb_traits, streaming_parameters, config_map);
+//					(void)FileTranscodingBroadcom(urlparams["file"], fd, webauth, *stb_traits, streaming_parameters, *config_map);
 					break;
 				}
 
@@ -315,7 +314,7 @@ ClientSocket::ClientSocket(int fd_in,
 					string service(string("1:0:1:0:0:0:0:0:0:0:") + Url(urlparams.at("file")).encode());
 
 					Util::vlog("ClientSocket: transcoding service enigma");
-					(void)TranscodingEnigma(service, fd, webauth, stb_traits, streaming_parameters);
+					(void)TranscodingEnigma(service, fd, webauth,* stb_traits, streaming_parameters);
 					break;
 				}
 
@@ -328,15 +327,7 @@ ClientSocket::ClientSocket(int fd_in,
 			Util::vlog("ClientSocket: file transcoding ends");
 
 			_exit(0);
-		}
-		else
-		{
-			pid_child = fork();
-			if (pid_child)
-			{
-				clientutil.create(pid_child, "", client_addr);
-				return;
-			}
+*/
 		}
 
 		if((urlparams[""] == "/livestream") && urlparams.count("service"))
@@ -344,7 +335,7 @@ ClientSocket::ClientSocket(int fd_in,
 			Service service(urlparams["service"]);
 
 			Util::vlog("ClientSocket: live streaming request");
-			(void)LiveStreaming(service, fd, streaming_parameters, config_map);
+			(void)LiveStreaming(service, fd, streaming_parameters, *config_map);
 			Util::vlog("ClientSocket: live streaming ends");
 			_exit(0);
 		}
@@ -354,38 +345,18 @@ ClientSocket::ClientSocket(int fd_in,
 			Service service(urlparams["service"]);
 
 			Util::vlog("ClientSocket: live transcoding request");
-
-			switch(stb_traits.transcoding_type)
+			if (!threadutil.createlivejob(urlparams["service"], client_addr, fd, stb_traits, streaming_parameters, config_map))
 			{
-				case(stb_transcoding_broadcom):
-				{
-					Util::vlog("ClientSocket: transcoding service broadcom");
-					(void)LiveTranscodingBroadcom(service, fd, stb_traits, streaming_parameters, config_map);
-					break;
-				}
-
-				case(stb_transcoding_enigma):
-				{
-					Util::vlog("ClientSocket: transcoding service enigma");
-					(void)TranscodingEnigma(service.service_string(), fd, webauth, stb_traits, streaming_parameters);
-					break;
-				}
-
-				default:
-				{
-					throw(http_trap(string("not a supported stb for transcoding"), 400, "Bad request"));
-				}
+				Util::vlog("ClientSocket: no free thread for serving => abort");
+				close(fd);
 			}
-
-			Util::vlog("ClientSocket: live transcoding ends");
-
-			_exit(0);
+			return;
 		}
 
 		if((urlparams[""] == "/filestream") && urlparams.count("file"))
 		{
 			Util::vlog("ClientSocket: file streaming request");
-			(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, config_map);
+			(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, *config_map);
 			Util::vlog("ClientSocket: file streaming ends");
 			_exit(0);
 		}
@@ -401,7 +372,7 @@ ClientSocket::ClientSocket(int fd_in,
 			Util::vlog("ClientSocket: request for web");
 
 			string data;
-			WebRequest webrequest(config_map, headers, cookies, urlparams, stb_traits);
+			WebRequest webrequest(*config_map, headers, cookies, urlparams, *stb_traits);
 
 			data = webrequest.get(mimetype);
 
@@ -427,31 +398,41 @@ ClientSocket::ClientSocket(int fd_in,
 				if(default_action == action_stream)
 				{
 					Util::vlog("ClientSocket: streaming file");
-					(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, config_map);
+					(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, *config_map);
 				}
 				else
 				{
-					switch(stb_traits.transcoding_type)
+					switch(stb_traits->transcoding_type)
 					{
 						case(stb_transcoding_broadcom):
 						{
 							Util::vlog("ClientSocket: transcoding service broadcom");
-							(void)FileTranscodingBroadcom(urlparams["file"], fd, webauth, stb_traits, streaming_parameters, config_map);
+							if (!threadutil.createfilejob(urlparams["file"], client_addr, fd, stb_traits, streaming_parameters, config_map))
+							{
+								Util::vlog("ClientSocket: no free thread for serving => abort");
+								close(fd);
+							}
+							return;
+						}
+/*						{
+							Util::vlog("ClientSocket: transcoding service broadcom");
+							(void)FileTranscodingBroadcom(urlparams["file"], fd, webauth, *stb_traits, streaming_parameters, *config_map);
 							break;
 						}
 
 						case(stb_transcoding_enigma):
 						{
-							string service(string("1:0:1:0:0:0:0:0:0:0:") + Url(urlparams.at("file")).encode());
+//							string service(string("1:0:1:0:0:0:0:0:0:0:") + Url(urlparams.at("file")).encode());
 
 							Util::vlog("ClientSocket: transcoding service enigma");
-							(void)TranscodingEnigma(service, fd, webauth, stb_traits, streaming_parameters);
+//							(void)TranscodingEnigma(service, fd, webauth, *stb_traits, streaming_parameters);
 							break;
 						}
-
+*/
 						default:
 						{
-							throw(http_trap(string("not a supported stb for transcoding"), 400, "Bad request"));
+							close(fd);
+//							throw(http_trap(string("not a supported stb for transcoding"), 400, "Bad request"));
 						}
 					}
 				}
@@ -469,25 +450,30 @@ ClientSocket::ClientSocket(int fd_in,
 					if(default_action == action_stream)
 					{
 						Util::vlog("ClientSocket: streaming service");
-						(void)LiveStreaming(service, fd, streaming_parameters, config_map);
+						(void)LiveStreaming(service, fd, streaming_parameters, *config_map);
 					}
 					else
 					{
 						Util::vlog("ClientSocket: default live transcoding request");
 
-						switch(stb_traits.transcoding_type)
+						switch(stb_traits->transcoding_type)
 						{
 							case(stb_transcoding_broadcom):
 							{
 								Util::vlog("ClientSocket: transcoding service broadcom");
-								(void)LiveTranscodingBroadcom(service, fd, stb_traits, streaming_parameters, config_map);
+								if (!threadutil.createlivejob(urlparams[""].substr(1), client_addr, fd, stb_traits, streaming_parameters, config_map))
+								{
+									Util::vlog("ClientSocket: no free thread for serving => abort");
+									close(fd);
+								}
+								return;
 								break;
 							}
 
 							case(stb_transcoding_enigma):
 							{
 								Util::vlog("ClientSocket: transcoding service enigma");
-								(void)TranscodingEnigma(service.service_string(), fd, webauth, stb_traits, streaming_parameters);
+								(void)TranscodingEnigma(service.service_string(), fd, webauth, *stb_traits, streaming_parameters);
 								break;
 							}
 
@@ -517,8 +503,6 @@ ClientSocket::ClientSocket(int fd_in,
 		Util::vlog("ClientSocket: http_trap: %s (%d: %s)", e.what(), e.http_error, message.c_str());
 
 		write(fd, reply.c_str(), reply.length());
-		if (pid_child == 0)
-			_exit(0);
 
 	}
 	catch(const trap &e)
@@ -527,8 +511,6 @@ ClientSocket::ClientSocket(int fd_in,
 		reply += http_error_headers;
 		Util::vlog("ClientSocket: trap: %s", e.what());
 		write(fd, reply.c_str(), reply.length());
-		if (pid_child == 0)
-			_exit(0);
 	}
 	catch(...)
 	{
@@ -536,14 +518,12 @@ ClientSocket::ClientSocket(int fd_in,
 		reply += http_error_headers;
 		Util::vlog("ClientSocket: unknown exception");
 		write(fd, reply.c_str(), reply.length());
-		if (pid_child == 0)
-			_exit(0);
 	}
 }
 
 ClientSocket::~ClientSocket()
 {
-	close(fd);
+	//close(fd);
 }
 
 /*
@@ -707,15 +687,15 @@ bool ClientSocket::get_feature_value(string feature_name, string value_in, strin
 	const stb_feature_t *feature = 0;
 	size_t				feature_idx;
 
-	for(feature_idx = 0; feature_idx < stb_traits.num_features; feature_idx++)
+	for(feature_idx = 0; feature_idx < stb_traits->num_features; feature_idx++)
 	{
-		feature = &stb_traits.features[feature_idx];
+		feature = &(stb_traits->features[feature_idx]);
 
 		if((feature_name == feature->id) && feature->settable)
 			break;
 	}
 
-	if(feature_idx >= stb_traits.num_features)
+	if(feature_idx >= stb_traits->num_features)
 		return(false);
 
 	if(feature->api_data)
@@ -804,7 +784,7 @@ void ClientSocket::check_add_defaults_from_config()
 	string						value_out;
 	string						api_data;
 
-	for(it = config_map.begin(); it != config_map.end(); it++)
+	for(it = config_map->begin(); it != config_map->end(); it++)
 	{
 		if(get_feature_value(it->first, it->second.string_value, value_out, api_data))
 		{
@@ -822,9 +802,9 @@ void ClientSocket::add_default_params()
 	size_t				feature_idx;
 	string				value;
 
-	for(feature_idx = 0; feature_idx < stb_traits.num_features; feature_idx++)
+	for(feature_idx = 0; feature_idx < stb_traits->num_features; feature_idx++)
 	{
-		feature = &stb_traits.features[feature_idx];
+		feature = &(stb_traits->features[feature_idx]);
 
 		if(!feature->settable)
 			continue;

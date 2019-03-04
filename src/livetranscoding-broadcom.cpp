@@ -78,6 +78,11 @@ LiveTranscodingBroadcom::LiveTranscodingBroadcom(const Service &service, int soc
 		Util::vlog("LiveTranscodingBroadcom: pid[%s] = 0x%x", it->first.c_str(), it->second);
 
 	EncoderBroadcom encoder(pids, stb_traits, streaming_parameters);
+	if (encoder.getfd()< 0)
+	{
+		close(socketfd);
+		return;
+	}
 	encoder_pids = encoder.getpids();
 
 	for(it = encoder_pids.begin(); it != encoder_pids.end(); it++)
@@ -210,6 +215,7 @@ LiveTranscodingBroadcom::LiveTranscodingBroadcom(const Service &service, int soc
 		}
 	}
 
+	close(socketfd);
 	Util::vlog("LiveTranscodingBroadcom: streaming ends, encoder max queue fill: %d%%", max_fill_encoder);
 	Util::vlog("LiveTranscodingBroadcom: socket max queue fill: %d%%", max_fill_socket);
 }

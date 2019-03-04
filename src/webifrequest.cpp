@@ -76,7 +76,7 @@ WebifRequest::WebifRequest(const Service &service_in, const ConfigMap &config_ma
 
 	request = string("GET /web/stream?StreamService=") + service.service_string() + " HTTP/1.0\r\n\r\n";
 
-	Util::vlog("WebifRequest: send request to webif: \"%s\"", request.c_str());
+	//Util::vlog("WebifRequest: send request to webif: \"%s\"", request.c_str());
 
 	if(write(fd, request.c_str(), request.length()) != (ssize_t)request.length())
 		throw(trap("WebifRequest: cannot send request"));

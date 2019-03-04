@@ -72,7 +72,8 @@ EncoderBroadcom::EncoderBroadcom(const PidMap &pids_in,
 	}
 
 	if((pmt == -1) || (video == -1) || (audio == -1))
-		throw(trap("EncoderBroadcom: missing pmt, video or audio pid"));
+//		throw(trap("EncoderBroadcom: missing pmt, video or audio pid"));
+		return;
 
 	// try multiples times with a little delay, as often multiple
 	// requests are sent from a single http client, resulting in multiple
@@ -114,7 +115,11 @@ EncoderBroadcom::EncoderBroadcom(const PidMap &pids_in,
 	}
 
 	if(encoder < 0)
-		throw(trap("no encoders available"));
+	{
+//		throw(trap("no encoders available"));
+		Util::vlog("no encoders available");
+		return;
+	}
 
 	for(StreamingParameters::const_iterator it(streaming_parameters.begin()); it != streaming_parameters.end(); it++)
 	{
@@ -260,7 +265,8 @@ EncoderBroadcom::EncoderBroadcom(const PidMap &pids_in,
 EncoderBroadcom::~EncoderBroadcom()
 {
 	stop();
-	close(fd);
+	if (fd >=0)
+		close(fd);
 }
 
 void* EncoderBroadcom::start_thread_function(void * arg)

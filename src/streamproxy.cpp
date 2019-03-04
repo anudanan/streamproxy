@@ -3,7 +3,8 @@
 
 #include "acceptsocket.h"
 #include "clientsocket.h"
-#include "clientutil.h"
+#include "clientthreads.h"
+#include "threadutil.h"
 #include "util.h"
 #include "configmap.h"
 #include "enigma_settings.h"
@@ -18,11 +19,11 @@
 #include <syslog.h>
 #include <string.h>
 #include <poll.h>
-#include <signal.h>
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/inotify.h>
+#include <pthread.h>
 
 #include <sstream>
 using std::ostringstream;
@@ -71,32 +72,6 @@ static void reexec(void)
 		Util::vlog("streamproxy: re-exec failed (execve), quitting");
 		exit(1);
 	}
-}
-
-static void sigchld(int) // prevent Z)ombie processes
-{
-	siginfo_t infop;
-
-	infop.si_pid = 0;
-
-	waitid(P_ALL, 0, &infop, WEXITED | WNOHANG);
-
-	Util::vlog("streamproxy: pid %d exited", infop.si_pid);
-
-	clientutil.erase(infop.si_pid);
-
-	if(infop.si_pid)
-	{
-		if((infop.si_code == CLD_KILLED) || (infop.si_code == CLD_DUMPED))
-		{
-			if(infop.si_status == SIGSEGV)
-				Util::vlog("streamproxy: child process %d exited with segmentation fault", infop.si_pid);
-			else
-				Util::vlog("streamproxy: child process %d was killed", infop.si_pid);
-		}
-	}
-	else
-		Util::vlog("streamproxy: sigchld called but no childeren to wait for");
 }
 
 /*
@@ -174,6 +149,9 @@ int main(int argc, char *const argv[], char *const arge[])
 		size_t									stb, id;
 		const stb_traits_t						*stb_traits;
 		const stb_id_t							*traits_id;
+		pthread_t								tid1;
+//		pthread_t								tid2;
+		
 
 		positional_options.add("listen", -1);
 
@@ -265,6 +243,15 @@ int main(int argc, char *const argv[], char *const arge[])
 
 		Util::vlog("model identified as: %s %s (%s)", stb_traits->manufacturer, stb_traits->model, stb_traits->chipset);
 
+		if(pthread_create(&tid1, NULL, ClientThread::clientmain, NULL)) 
+			throw(trap("cannot create streaming thread"));
+		Util::vlog("create streaming thread id: %d", tid1);
+//		if(pthread_create(&tid2, NULL, ClientThread::clientmain, NULL)) 
+//			throw(trap("cannot create streaming thread"));
+//		Util::vlog("create streaming thread id: %d", tid2);
+		threadutil.create(tid1);
+//		threadutil.create(tid2);
+
 		for(it = listen_parameters.begin(); it != listen_parameters.end(); it++)
 		{
 			ix = it->find(':');
@@ -298,12 +285,6 @@ int main(int argc, char *const argv[], char *const arge[])
 
 //		if(!Util::foreground && daemon(0, 0))
 //			throw(trap("daemon() gives error"));
-
-		signal_action.sa_handler = sigchld;
-		signal_action.sa_flags = SA_NOCLDSTOP | SA_NODEFER | SA_RESTART;
-		signal_action.sa_restorer = 0;
-
-		sigemptyset(&signal_action.sa_mask);
 
 		sigaction(SIGCHLD, &signal_action, 0);
 
@@ -342,7 +323,7 @@ int main(int argc, char *const argv[], char *const arge[])
 
 			if(pfd[0].revents & POLLIN)
 			{
-				if (clientutil.count() == 0)
+				if (threadutil.jobsidle())
 				{
 					Util::vlog("streamproxy: config file change detected, no clients acitve, restarting");
 					reexec();
@@ -371,10 +352,7 @@ int main(int argc, char *const argv[], char *const arge[])
 				Util::vlog("streamproxy: accept new connection on port %s, default action: %s, fd %d",
 						it2->first.c_str(), action_name[it2->second.default_action], new_socket);
 
-				(void)ClientSocket(new_socket, it2->second.default_action, config_map, *stb_traits);
-				close(new_socket);
-
-				usleep(100000); // runaway protection
+				(void)ClientSocket(new_socket, it2->second.default_action, &config_map, stb_traits);
 			}
 		}
 	}
