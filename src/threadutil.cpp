@@ -22,19 +22,15 @@ ThreadUtil::ThreadUtil()		// Init
 		clientthread[i].name = "";
 		clientthread[i].addr = "";
 	}
-	clientthread[0].tstate = st_idle;
 }
 
-bool ThreadUtil::create(pthread_t tid)
+bool ThreadUtil::createtransidle()
 {
 	for (unsigned i=0; i < CLIENTTHREADS; ++i)
-		if (clientthread[i].tid == 0)
+		if (clientthread[i].tstate  == st_none)
 		{
-			clientthread[i].name = "";
-			clientthread[i].addr = "";
-			clientthread[i].tid = tid;
 			clientthread[i].tstate = st_idle,
-			Util::vlog("ThreadUtil: new thread [%d], tid: %ul, addr: %s, name: %s", i, clientthread[i].tid, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
+			Util::vlog("ThreadUtil: new trancode thread handel [%d], addr: %s, name: %s", i, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
 			return true;
 		}
 	return false;

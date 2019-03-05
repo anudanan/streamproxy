@@ -106,7 +106,7 @@ Demuxer::~Demuxer()
 		if(pfd.revents & POLLIN)
 		{
 			rv = read(fd, buffer, sizeof(buffer));
-			Util::vlog("Demuxer: drained %d bytes", rv);
+			//Util::vlog("Demuxer: drained %d bytes", rv);
 
 			if(rv <= 0)
 				break;

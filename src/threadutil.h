@@ -40,7 +40,7 @@ class	ThreadUtil
 	public:
 		ThreadUtil();
 
-		bool			create(pthread_t tid);
+		bool			createtransidle();
 		ThreadData		*findclientseek(std::string filename, std::string addr, int fd, StreamingParameters streaming_parameters);
 		ThreadData		*findtid(pthread_t tid);
 		bool			jobsidle();
