@@ -107,7 +107,7 @@ ThreadData *ThreadUtil::findclientseek(std::string filename, std::string addr, i
 	for (unsigned i=0; i < CLIENTTHREADS; ++i)
 		if ((clientthread[i].tstate == st_filetrans) && (clientthread[i].addr == addr) && (clientthread[i].name == filename ))
 		{
-			Util::vlog("ThreadUtil: found seek thread [%d]: %ul, addr: %s, filename: %s", i, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
+			Util::vlog("ThreadUtil: found seek thread [%d]:, addr: %s, filename: %s", i, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
 			clientthread[i].streaming_parameters = streaming_parameters;
 			clientthread[i].fd = fd;
 			return clientthread + i;
