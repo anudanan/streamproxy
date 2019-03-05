@@ -152,7 +152,7 @@ ClientSocket::ClientSocket(int fd_in,
 
 		for(it1 = lines.begin(); it1 != lines.end(); it1++)
 		{
-			//Util::vlog("ClientSocket: line: \"%s\"", it1->c_str());
+			Util::vlog("ClientSocket: line: \"%s\"", it1->c_str());
 
 			if(it1->find("GET ") == 0)
 			{
@@ -297,8 +297,8 @@ ClientSocket::ClientSocket(int fd_in,
 				{
 					Util::vlog("ClientSocket: no free thread for serving => abort");
 					close(fd);
-					return;
 				}
+				return;
 			}
 		}
 

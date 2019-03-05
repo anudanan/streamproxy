@@ -86,9 +86,10 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 		{
 			if (socket_fd != 0)				//	socket change or first socket
 				close(socket_fd);
+
 			socket_fd = tdp->fd;
 			socket_queue.reset();
-
+	
 			streaming_parameters = tdp->streaming_parameters;
 			if(streaming_parameters.count("startfrom"))
 				time_offset_s = TimeOffset(streaming_parameters.at("startfrom")).as_seconds();
@@ -171,6 +172,8 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 			http_reply += "\r\n";
 
 			socket_queue.append(http_reply.length(), http_reply.c_str());
+
+			Util::vlog("FileTranscodingBroadcom: HTPP answer: %s", http_reply.c_str());
 
 			for(it = pids.begin(); it != pids.end(); it++)
 				Util::vlog("FileTranscodingBroadcom: pid[%s] = %x", it->first.c_str(), it->second);
