@@ -19,7 +19,8 @@ class ClientThread
 		typedef std::vector<std::string> stringvector;
 
 	public:
-		static void	*clientmain(void*);
+		static void *clientfile(void*);
+		static void *clientlive(void*);
 
 		ClientThread();
 //		~ClientThread();

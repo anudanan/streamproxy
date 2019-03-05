@@ -23,7 +23,7 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/inotify.h>
-#include <pthread.h>
+//#include <pthread.h>
 
 #include <sstream>
 using std::ostringstream;
@@ -149,7 +149,7 @@ int main(int argc, char *const argv[], char *const arge[])
 		size_t									stb, id;
 		const stb_traits_t						*stb_traits;
 		const stb_id_t							*traits_id;
-		pthread_t								tid1;
+//		pthread_t								tid1;
 //		pthread_t								tid2;
 		
 
@@ -243,13 +243,13 @@ int main(int argc, char *const argv[], char *const arge[])
 
 		Util::vlog("model identified as: %s %s (%s)", stb_traits->manufacturer, stb_traits->model, stb_traits->chipset);
 
-		if(pthread_create(&tid1, NULL, ClientThread::clientmain, NULL)) 
-			throw(trap("cannot create streaming thread"));
-		Util::vlog("create streaming thread id: %ul", tid1);
+//		if(pthread_create(&tid1, NULL, ClientThread::clientmain, NULL)) 
+//			throw(trap("cannot create streaming thread"));
+//		Util::vlog("create streaming thread id: %ul", tid1);
 //		if(pthread_create(&tid2, NULL, ClientThread::clientmain, NULL)) 
 //			throw(trap("cannot create streaming thread"));
 //		Util::vlog("create streaming thread id: %ul, tid2);
-		threadutil.create(tid1);
+//		threadutil.create(tid1);
 //		threadutil.create(tid2);
 
 		for(it = listen_parameters.begin(); it != listen_parameters.end(); it++)

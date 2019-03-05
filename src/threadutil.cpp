@@ -1,12 +1,15 @@
 #include "util.h"
 #include "types.h"
 #include "threadutil.h"
+#include "clientthreads.h"
+#include "trap.h"
 
 #include <stdint.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <string.h>
+#include <pthread.h>
 
 ThreadUtil	threadutil;			// global class for streaming thread handlung and client seek detection
 
@@ -19,6 +22,7 @@ ThreadUtil::ThreadUtil()		// Init
 		clientthread[i].name = "";
 		clientthread[i].addr = "";
 	}
+	clientthread[0].tstate = st_idle;
 }
 
 bool ThreadUtil::create(pthread_t tid)
@@ -49,8 +53,11 @@ bool ThreadUtil::createfilejob(std::string filename, std::string addr, int fd,
 			clientthread[i].stb_traits = stb_traits;
 			clientthread[i].streaming_parameters = streaming_parameters;
 			clientthread[i].config_map = config_map;
-			clientthread[i].tstate = st_filetrans,
-			Util::vlog("ThreadUtil: create file job thread [%d], addr: %s, filename: %s d, fd: %d", i, 
+			clientthread[i].tstate = st_filetrans;
+			if(pthread_create(&(clientthread[i].tid), NULL, ClientThread::clientfile, clientthread+i))
+            	throw(trap("cannot create streaming thread"));
+  
+			Util::vlog("ThreadUtil: create file job thread [%d], tid %ul, addr: %s, filename: %s d, fd: %d", i, clientthread[i].tid,
 								clientthread[i].addr.c_str(), clientthread[i].name.c_str(), clientthread[i].fd);
 			return true;
 		}
@@ -70,27 +77,25 @@ bool ThreadUtil::createlivejob(std::string service, std::string addr, int fd,
 			clientthread[i].stb_traits = stb_traits;
 			clientthread[i].streaming_parameters = streaming_parameters;
 			clientthread[i].config_map = config_map;
-			clientthread[i].tstate = st_livetrans,
-			Util::vlog("ThreadUtil: create live job thread [%d], addr: %s, service: %s d, fd: %d", i, 
+			clientthread[i].tstate = st_livetrans;
+			if(pthread_create(&(clientthread[i].tid), NULL, ClientThread::clientlive, clientthread+i))
+            	throw(trap("cannot create streaming thread"));
+  
+			Util::vlog("ThreadUtil: create live job thread [%d], tid %ul, addr: %s, service: %s d, fd: %d", i, clientthread[i].tid,
 						clientthread[i].addr.c_str(), clientthread[i].name.c_str(), clientthread[i].fd);
 			return true;
 		}
 	return false;
 }
 
-bool ThreadUtil::erasejob(pthread_t tid)
+void ThreadUtil::erasejob(ThreadData *tdp)
 {
-	for (unsigned i=0; i < CLIENTTHREADS; ++i)
-		if (clientthread[i].tid == tid)
-		{
-			Util::vlog("ThreadUtil: erase job thread [%d], addr: %s, name: %s", i, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
-			clientthread[i].name = "";
-			clientthread[i].addr = "";
-			clientthread[i].fd = 0;
-			clientthread[i].tstate = st_idle;
-			return true;
-		}
-	return false;
+		Util::vlog("ThreadUtil: erase job thread [%d], tid %ul, addr: %s, name: %s", tdp-clientthread, tdp->tid,
+						tdp->addr.c_str(), tdp->name.c_str());
+			tdp->name = "";
+			tdp->addr = "";
+			tdp->fd = 0;
+			tdp->tstate = st_idle;
 }
 
 bool ThreadUtil::jobsidle()

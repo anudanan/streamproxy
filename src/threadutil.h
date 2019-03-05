@@ -50,7 +50,7 @@ class	ThreadUtil
 		bool			createlivejob(std::string service, std::string addr, int fd,
 								const stb_traits_t *stb_traits, StreamingParameters streaming_parameters,
             					const ConfigMap *config_map);
-		bool			erasejob(pthread_t tid);
+		void			erasejob(ThreadData* tdp);
 
 };
 
