@@ -37,14 +37,14 @@ ClientThread::ClientThread()
 }
 
 void *ClientThread::clientfile(void *arg)
-{		
+{
 		ThreadData *tdp	= (ThreadData*) arg;
-		
+
 		Util::vlog("ClientSocket: file transcoding request");
 
 		switch(tdp->stb_traits->transcoding_type)
 		{
-	 		case(stb_transcoding_broadcom):
+			case(stb_transcoding_broadcom):
 			{
 				Util::vlog("Clientthreads: transcoding service broadcom");
 				(void)FileTranscodingBroadcom(tdp);
@@ -72,7 +72,7 @@ void *ClientThread::clientfile(void *arg)
 }
 
 void *ClientThread::clientlive(void *arg)
-{		
+{
 		ThreadData *tdp	= (ThreadData*) arg;
 		Service service(tdp->name);
 

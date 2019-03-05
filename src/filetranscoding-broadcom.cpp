@@ -47,8 +47,8 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 													"Server: Streamproxy\r\n"
 													"Accept-Ranges: bytes\r\n";
 	string						http_reply;
-//    static char					buffer[16536];
-//    ssize_t						rv;
+//	static char					buffer[16536];
+//	ssize_t						rv;
 
 
 
@@ -69,7 +69,7 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 
 	EncoderBroadcom encoder(pids, *stb_traits, streaming_parameters);
 	if (encoder.getfd()<0)
-	{	
+	{
 		close(tdp->fd);
 		return;
 	}
@@ -122,7 +122,7 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 
 			socket_fd = tdp->fd;
 			socket_queue.reset();
-	
+
 			streaming_parameters = tdp->streaming_parameters;
 			if(streaming_parameters.count("startfrom"))
 				time_offset_s = TimeOffset(streaming_parameters.at("startfrom")).as_seconds();
@@ -223,11 +223,11 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 				if(encoder.start_init())
 				{
 					encoder_state = state_starting;
- 					Util::vlog("FileTranscodingBroadcom: state init -> starting");
+					Util::vlog("FileTranscodingBroadcom: state init -> starting");
 				}
 				break;
 			}
-      
+
 			case(state_starting):
 			{
 				if(encoder.start_finish())

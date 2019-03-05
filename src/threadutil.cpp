@@ -17,7 +17,7 @@ ThreadUtil::ThreadUtil()		// Init
 {
 	for (unsigned i=0; i < CLIENTTHREADS; ++i)
 	{
-		clientthread[i].tid = 0;	
+		clientthread[i].tid = 0;
 		clientthread[i].tstate = st_none;
 		clientthread[i].name = "";
 		clientthread[i].addr = "";
@@ -55,8 +55,8 @@ bool ThreadUtil::createfilejob(std::string filename, std::string addr, int fd,
 			clientthread[i].config_map = config_map;
 			clientthread[i].tstate = st_filetrans;
 			if(pthread_create(&(clientthread[i].tid), NULL, ClientThread::clientfile, clientthread+i))
-            	throw(trap("cannot create streaming thread"));
-  
+				throw(trap("cannot create streaming thread"));
+
 			Util::vlog("ThreadUtil: create file job thread [%d], tid %ul, addr: %s, filename: %s d, fd: %d", i, clientthread[i].tid,
 								clientthread[i].addr.c_str(), clientthread[i].name.c_str(), clientthread[i].fd);
 			return true;
@@ -79,8 +79,8 @@ bool ThreadUtil::createlivejob(std::string service, std::string addr, int fd,
 			clientthread[i].config_map = config_map;
 			clientthread[i].tstate = st_livetrans;
 			if(pthread_create(&(clientthread[i].tid), NULL, ClientThread::clientlive, clientthread+i))
-            	throw(trap("cannot create streaming thread"));
-  
+				throw(trap("cannot create streaming thread"));
+
 			Util::vlog("ThreadUtil: create live job thread [%d], tid %ul, addr: %s, service: %s d, fd: %d", i, clientthread[i].tid,
 						clientthread[i].addr.c_str(), clientthread[i].name.c_str(), clientthread[i].fd);
 			return true;

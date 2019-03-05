@@ -11,18 +11,18 @@
 #include <pthread.h>
 #include <string>
 
-#define CLIENTTHREADS  4 
+#define CLIENTTHREADS  4
 
-typedef enum 
-{ 
-	st_none, 
-	st_idle, 
-	st_filetrans, 
-	st_livetrans 
+typedef enum
+{
+	st_none,
+	st_idle,
+	st_filetrans,
+	st_livetrans
 } ThreadState;
 
-typedef	struct 
-{	
+typedef	struct
+{
 	pthread_t			tid;
 	ThreadState			tstate;
 	std::string			name;
@@ -30,7 +30,7 @@ typedef	struct
 	int					fd;
 	const stb_traits_t	*stb_traits;
 	StreamingParameters	streaming_parameters;
-   	const ConfigMap		*config_map;
+	const ConfigMap		*config_map;
 } ThreadData;
 
 class	ThreadUtil
@@ -46,10 +46,10 @@ class	ThreadUtil
 		bool			jobsidle();
 		bool			createfilejob(std::string filename, std::string addr, int fd,
 								const stb_traits_t *stb_traits, StreamingParameters streaming_parameters,
-            					const ConfigMap *config_map);
+								const ConfigMap *config_map);
 		bool			createlivejob(std::string service, std::string addr, int fd,
 								const stb_traits_t *stb_traits, StreamingParameters streaming_parameters,
-            					const ConfigMap *config_map);
+								const ConfigMap *config_map);
 		void			erasejob(ThreadData* tdp);
 
 };
