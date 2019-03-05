@@ -2,12 +2,7 @@
 #define _threadutil_h_
 
 #include "types.h"
-#include "encoder-broadcom.h"
 #include "configmap.h"
-#include "config.h"
-#include "trap.h"
-#include "service.h"
-#include "util.h"
 #include "types.h"
 #include "stbtraits.h"
 #include "threadutil.h"
@@ -30,13 +25,12 @@ typedef	struct
 {	
 	pthread_t			tid;
 	ThreadState			tstate;
-	int					seekposition;
 	std::string			name;
 	std::string			addr;
 	int					fd;
-	const stb_traits_t 		*stb_traits;
+	const stb_traits_t	*stb_traits;
 	StreamingParameters	streaming_parameters;
-   	const ConfigMap 			*config_map;
+   	const ConfigMap		*config_map;
 } ThreadData;
 
 class	ThreadUtil

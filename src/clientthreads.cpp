@@ -21,12 +21,6 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <signal.h>
-#include <linux/sockios.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <poll.h>
 #include <ctype.h>
 #include <pwd.h>
 #include <grp.h>
@@ -59,10 +53,7 @@ void *ClientThread::clientmain(void *)
 			switch (tdp->tstate)		
 			{
 				case (st_filetrans):
-			 	{	Util::vlog("clientthread: streaming parameters:");
-					for(spit = tdp->streaming_parameters.begin(); spit != tdp->streaming_parameters.end(); spit++)
-						Util::vlog("    %s = %s", spit->first.c_str(), spit->second.c_str());
-
+			 	{
 					switch(tdp->stb_traits->transcoding_type)
 					{
 						case(stb_transcoding_broadcom):
@@ -83,7 +74,7 @@ void *ClientThread::clientmain(void *)
 //
 						default:
 						{
-							throw(http_trap(string("not a supported stb for transcoding"), 400, "Bad request"));
+//							throw(http_trap(string("not a supported stb for transcoding"), 400, "Bad request"));
 							Util::vlog("Clientthreads: not a supported stb for transcoding");
 						}
 					}

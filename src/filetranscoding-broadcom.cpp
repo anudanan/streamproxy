@@ -16,17 +16,7 @@ using std::string;
 
 #include <unistd.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <poll.h>
-
-//int 	parent_signal = 0;
-
-//static void sigparentterm(int signum) // parent process can terminate me
-//{
-//	parent_signal = signum;
-//
-//}
-
 
 FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 {
@@ -58,8 +48,6 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 													"Accept-Ranges: bytes\r\n";
 	string						http_reply;
 
-
-//	signal(SIGTERM, sigparentterm);
 
 	socket_fd = 0;
 	audio_lang = config_map->at("audiolang").string_value;
@@ -94,22 +82,12 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 
 	for(;;)
 	{
-//		if(parent_signal)
-//		{
-//			Util::vlog("streamproxy: broadcom file transcoding received signal %d ",parent_signal);
-//			break;
-//		}
-
-		if (tdp->fd != socket_fd)			//new request
+		if (tdp->fd != socket_fd)			//	new request
 		{
-			if (socket_fd != 0)
-			{
-				socket_queue.write(socket_fd);
-				socket_queue.reset();
+			if (socket_fd != 0)				//	socket change or first socket
 				close(socket_fd);
-			}
-		
 			socket_fd = tdp->fd;
+			socket_queue.reset();
 
 			streaming_parameters = tdp->streaming_parameters;
 			if(streaming_parameters.count("startfrom"))
@@ -206,19 +184,20 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 		{
 			case(state_initial):
 			{
-//				Util::vlog("FileTranscodingBroadcom: encoder-init");
 				if(encoder.start_init())
+				{
 					encoder_state = state_starting;
+ 					Util::vlog("FileTranscodingBroadcom: state init -> starting");
+				}
 				break;
 			}
-
+      
 			case(state_starting):
 			{
-//				Util::vlog("FileTranscodingBroadcom: encoder-starting");
 				if(encoder.start_finish())
 				{
 					encoder_state = state_running;
-//					Util::vlog("FileTranscodingBroadcom: encoder-running");
+					Util::vlog("FileTranscodingBroadcom: state starting -> running");
 				}
 				break;
 			}
@@ -255,12 +234,11 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 			break;
 		}
 
-/*		if(pfd[1].revents & (POLLERR | POLLNVAL))
+		if(pfd[1].revents & (POLLERR | POLLNVAL))
 		{
 			Util::vlog("FileTranscodingBroadcom: socket error");
 			break;
 		}
-*/
 
 		if(pfd[0].revents & POLLOUT)
 		{
@@ -269,24 +247,21 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 				Util::vlog("FileTranscodingBroadcom: eof");
 				break;
 			}
-//			Util::vlog("FileTranscodingBroadcom: encoder-readstream %d", bytes_read);
 
 			if((bytes_read = write(encoder_fd, encoder_buffer, bytes_read)) != broadcom_magic_buffer_size)
 			{
 				Util::vlog("FileTranscodingBroadcom: encoder error");
 				break;
 			}
-//			Util::vlog("FileTranscodingBroadcom: encoder-write %d", bytes_read);
 		}
 
-//		if(pfd[0].revents & POLLIN)
+		if(pfd[0].revents & POLLIN)
 		{
 			if(!socket_queue.read(encoder_fd, broadcom_magic_buffer_size))
 			{
 				Util::vlog("FileTranscodingBroadcom: read encoder error");
 				break;
 			}
-//			Util::vlog("FileTranscodingBroadcom: encoder-read");
 		}
 
 		if(pfd[1].revents & POLLOUT)
@@ -296,7 +271,6 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 				Util::vlog("FileTranscodingBroadcom: write socket error");
 				break;
 			}
-//			Util::vlog("FileTranscodingBroadcom: write_socket %d", socket_fd);
 		}
 	}
 

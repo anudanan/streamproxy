@@ -30,7 +30,7 @@ bool ThreadUtil::create(pthread_t tid)
 			clientthread[i].addr = "";
 			clientthread[i].tid = tid;
 			clientthread[i].tstate = st_idle,
-			Util::vlog("ThreadUtil: new thread tid: %d, addr: %s, name: %s", clientthread[i].tid, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
+			Util::vlog("ThreadUtil: new thread [%d], tid: %ul, addr: %s, name: %s", i, clientthread[i].tid, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
 			return true;
 		}
 	return false;
@@ -50,8 +50,8 @@ bool ThreadUtil::createfilejob(std::string filename, std::string addr, int fd,
 			clientthread[i].streaming_parameters = streaming_parameters;
 			clientthread[i].config_map = config_map;
 			clientthread[i].tstate = st_filetrans,
-			Util::vlog("ThreadUtil: create file job tid: %d, addr: %s, filename: %s d, fd: %d", clientthread[i].tid, 
-						clientthread[i].addr.c_str(), clientthread[i].name.c_str(), clientthread[i].fd);
+			Util::vlog("ThreadUtil: create file job thread [%d], addr: %s, filename: %s d, fd: %d", i, 
+								clientthread[i].addr.c_str(), clientthread[i].name.c_str(), clientthread[i].fd);
 			return true;
 		}
 	return false;
@@ -71,7 +71,7 @@ bool ThreadUtil::createlivejob(std::string service, std::string addr, int fd,
 			clientthread[i].streaming_parameters = streaming_parameters;
 			clientthread[i].config_map = config_map;
 			clientthread[i].tstate = st_livetrans,
-			Util::vlog("ThreadUtil: create live job tid: %d, addr: %s, service: %s d, fd: %d", clientthread[i].tid, 
+			Util::vlog("ThreadUtil: create live job thread [%d], addr: %s, service: %s d, fd: %d", i, 
 						clientthread[i].addr.c_str(), clientthread[i].name.c_str(), clientthread[i].fd);
 			return true;
 		}
@@ -83,7 +83,7 @@ bool ThreadUtil::erasejob(pthread_t tid)
 	for (unsigned i=0; i < CLIENTTHREADS; ++i)
 		if (clientthread[i].tid == tid)
 		{
-			Util::vlog("ThreadUtil: erase Job tid %d, addr: %s, ame: %s", clientthread[i].tid, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
+			Util::vlog("ThreadUtil: erase job thread [%d], addr: %s, name: %s", i, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
 			clientthread[i].name = "";
 			clientthread[i].addr = "";
 			clientthread[i].fd = 0;
@@ -107,7 +107,7 @@ ThreadData *ThreadUtil::findclientseek(std::string filename, std::string addr, i
 	for (unsigned i=0; i < CLIENTTHREADS; ++i)
 		if ((clientthread[i].tstate == st_filetrans) && (clientthread[i].addr == addr) && (clientthread[i].name == filename ))
 		{
-			Util::vlog("ThreadUtil: found thread tid: %d, addr: %s, filename: %s", clientthread[i].tid, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
+			Util::vlog("ThreadUtil: found seek thread [%d]: %ul, addr: %s, filename: %s", i, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
 			clientthread[i].streaming_parameters = streaming_parameters;
 			clientthread[i].fd = fd;
 			return clientthread + i;

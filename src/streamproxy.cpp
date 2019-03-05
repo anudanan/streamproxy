@@ -245,10 +245,10 @@ int main(int argc, char *const argv[], char *const arge[])
 
 		if(pthread_create(&tid1, NULL, ClientThread::clientmain, NULL)) 
 			throw(trap("cannot create streaming thread"));
-		Util::vlog("create streaming thread id: %d", tid1);
+		Util::vlog("create streaming thread id: %ul", tid1);
 //		if(pthread_create(&tid2, NULL, ClientThread::clientmain, NULL)) 
 //			throw(trap("cannot create streaming thread"));
-//		Util::vlog("create streaming thread id: %d", tid2);
+//		Util::vlog("create streaming thread id: %ul, tid2);
 		threadutil.create(tid1);
 //		threadutil.create(tid2);
 
