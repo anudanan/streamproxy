@@ -152,7 +152,7 @@ ClientSocket::ClientSocket(int fd_in,
 
 		for(it1 = lines.begin(); it1 != lines.end(); it1++)
 		{
-			Util::vlog("ClientSocket: line: \"%s\"", it1->c_str());
+			//Util::vlog("ClientSocket: line: \"%s\"", it1->c_str());
 
 			if(it1->find("GET ") == 0)
 			{
@@ -267,15 +267,15 @@ ClientSocket::ClientSocket(int fd_in,
 
 		check_add_defaults_from_config();
 
-		Util::vlog("\nclientsocket: streaming parameters after defaults:");
-		for(spit = streaming_parameters.begin(); spit != streaming_parameters.end(); spit++)
-			Util::vlog("    %s = %s", spit->first.c_str(), spit->second.c_str());
+		//Util::vlog("\nclientsocket: streaming parameters after defaults:");
+		//for(spit = streaming_parameters.begin(); spit != streaming_parameters.end(); spit++)
+			//Util::vlog("    %s = %s", spit->first.c_str(), spit->second.c_str());
 
 		check_add_urlparams();
 
-		Util::vlog("\nclientsocket: streaming parameters after url params:");
-		for(spit = streaming_parameters.begin(); spit != streaming_parameters.end(); spit++)
-			Util::vlog("    %s = %s", spit->first.c_str(), spit->second.c_str());
+		//Util::vlog("\nclientsocket: streaming parameters after url params:");
+		//for(spit = streaming_parameters.begin(); spit != streaming_parameters.end(); spit++)
+			//Util::vlog("    %s = %s", spit->first.c_str(), spit->second.c_str());
 
 		add_default_params();
 

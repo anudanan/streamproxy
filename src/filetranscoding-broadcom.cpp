@@ -42,11 +42,14 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 	Queue						socket_queue(1024 * 1024);
 	const char *				http_ok			=	"HTTP/1.1 200 OK\r\n";
 	const char *				http_partial	=	"HTTP/1.1 206 Partial Content\r\n";
-	const char *				http_headers	=	"Connection: Close\r\n"
+	const char *				http_headers	= 	"Connection: Close\r\n"
 													"Content-Type: video/mpeg\r\n"
 													"Server: Streamproxy\r\n"
 													"Accept-Ranges: bytes\r\n";
 	string						http_reply;
+//    static char					buffer[16536];
+//    ssize_t						rv;
+
 
 
 	socket_fd = 0;
@@ -85,7 +88,37 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 		if (tdp->fd != socket_fd)			//	new request
 		{
 			if (socket_fd != 0)				//	socket change or first socket
+			{
 				close(socket_fd);
+
+/*				Util::vlog("FileTranscodingbroadcom: starting draining");
+
+				for(;;)
+				{
+					pfd[0].events = POLLIN;
+
+					if((rv = poll(pfd, 1, 10)) == 0)
+						break;
+
+					if(rv < 0)
+					{
+						Util::vlog("EncoderBroadcom: poll error");
+						break;
+					}
+
+					if(pfd[0].revents & POLLIN)
+					{
+						rv = read(pfd[0].fd, buffer, sizeof(buffer));
+						Util::vlog("FileTranscodingBroadcom: STOP, drained %d bytes", rv);
+
+						if(rv <= 0)
+							break;
+					}
+					else
+						break;
+				}
+*/
+			}
 
 			socket_fd = tdp->fd;
 			socket_queue.reset();
@@ -161,7 +194,7 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 				http_reply = http_ok;
 
 			http_reply += http_headers;
-			http_reply += "Content-Length: " + Util::uint_to_string(stream.stream_length) + "\r\n";
+			http_reply += "Content-Length: " + Util::uint_to_string((stream.stream_length-file_offset)) + "\r\n";
 
 			if(partial)
 				http_reply += string("Content-Range: bytes ") +
@@ -173,7 +206,7 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 
 			socket_queue.append(http_reply.length(), http_reply.c_str());
 
-			Util::vlog("FileTranscodingBroadcom: HTPP answer: %s", http_reply.c_str());
+			//Util::vlog("FileTranscodingBroadcom: HTTP answer: %s", http_reply.c_str());
 
 			for(it = pids.begin(); it != pids.end(); it++)
 				Util::vlog("FileTranscodingBroadcom: pid[%s] = %x", it->first.c_str(), it->second);

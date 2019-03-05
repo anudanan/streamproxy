@@ -63,18 +63,17 @@ void *ClientThread::clientmain(void *)
 							break;
 						}
 
-//	       	        	case(stb_transcoding_enigma):
-//         	      		{
-//         		           	string service(string("1:0:1:0:0:0:0:0:0:0:") + Url(urlparams.at("file")).encode());
-//
-//             		       	Util::vlog("Clientthread: transcoding service enigma");
-//                 		   	(void)TranscodingEnigma(service, fd, webauth, stb_traits, streaming_parameters);
-//                  		break;
-//						}
-//
+						case(stb_transcoding_enigma):
+						{
+							string service(string("1:0:1:0:0:0:0:0:0:0:") + Url(tdp->name).encode());
+							Util::vlog("Clientthread: transcoding service enigma");
+//							(void)TranscodingEnigma(service, fd, webauth, stb_traits, streaming_parameters);
+							break;
+						}
+
 						default:
 						{
-//							throw(http_trap(string("not a supported stb for transcoding"), 400, "Bad request"));
+							throw(http_trap(string("not a supported stb for transcoding"), 400, "Bad request"));
 							Util::vlog("Clientthreads: not a supported stb for transcoding");
 						}
 					}
@@ -99,12 +98,12 @@ void *ClientThread::clientmain(void *)
 						}
 						break;
 
-//	 					case(stb_transcoding_enigma):
-//						{
-//							Util::vlog("ClientThreads: transcoding service enigma");
+						case(stb_transcoding_enigma):
+						{
+							Util::vlog("ClientThreads: transcoding service enigma");
 //							(void)TranscodingEnigma(service.service_string(), fd, webauth, *stb_traits, streaming_parameters);
-//							break;
-//						}
+							break;
+						}
 
  						default:
 						{
