@@ -55,7 +55,8 @@ void *ClientThread::clientfile(void *arg)
 			{
 				string service(string("1:0:1:0:0:0:0:0:0:0:") + Url(tdp->name).encode());
 				Util::vlog("Clientthread: transcoding service enigma");
-//				(void)TranscodingEnigma(service, fd, webauth, stb_traits, streaming_parameters);
+//				(void)TranscodingEnigma(service, tdp->fd, tdp->webauth, *(tdp->stb_traits), tdp->streaming_parameters);
+				(void)TranscodingEnigma(tdp);
 				break;
 			}
 
@@ -91,6 +92,7 @@ void *ClientThread::clientlive(void *arg)
 			{
 				Util::vlog("ClientThreads: transcoding service enigma");
 //				(void)TranscodingEnigma(service.service_string(), fd, webauth, *stb_traits, streaming_parameters);
+				(void)TranscodingEnigma(tdp);
 				break;
 			}
 

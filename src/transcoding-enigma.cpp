@@ -5,6 +5,7 @@
 #include "util.h"
 #include "queue.h"
 #include "transcoding-enigma.h"
+#include "threadutil.h"
 
 #include <string>
 using std::string;
@@ -35,9 +36,10 @@ static const struct addrinfo gai_localhost_hints =
 	.ai_next		= 0,
 };
 
-TranscodingEnigma::TranscodingEnigma(const string &service, int socketfd,
-		string webauth, const stb_traits_t &stb_traits,
-		const StreamingParameters &streaming_parameters)
+TranscodingEnigma::TranscodingEnigma(ThreadData* tdp)
+//TranscodingEnigma::TranscodingEnigma(const string &service, int socketfd,
+//		string webauth, const stb_traits_t &stb_traits,
+//		const StreamingParameters &streaming_parameters)
 {
 	size_t				feature_index;
 	const stb_feature_t	*feature = 0;
@@ -54,20 +56,21 @@ TranscodingEnigma::TranscodingEnigma(const string &service, int socketfd,
 							"Connection: Close\r\n"
 							"Content-Type: video/mpeg\r\n"
 							"\r\n";
+	int					socketfd;
 
-	Util::vlog("TranscodingEnigma: %s", service.c_str());
+	Util::vlog("TranscodingEnigma: %s", tdp->name.c_str());
 
-	for(StreamingParameters::const_iterator it(streaming_parameters.begin()); it != streaming_parameters.end(); it++)
+	for(StreamingParameters::const_iterator it(tdp->streaming_parameters.begin()); it != tdp->streaming_parameters.end(); it++)
 	{
-		for(feature_index = 0; feature_index < stb_traits.num_features; feature_index++)
+		for(feature_index = 0; feature_index < tdp->stb_traits->num_features; feature_index++)
 		{
-			feature = &stb_traits.features[feature_index];
+			feature = &(tdp->stb_traits->features[feature_index]);
 
 			if(it->first == feature->id)
 				break;
 		}
 
-		if(feature_index >= stb_traits.num_features)
+		if(feature_index >= tdp->stb_traits->num_features)
 		{
 			Util::vlog("TranscodingEnigma: no stb traits/feature entry for streaming parameter \"%s\"", it->first.c_str());
 			continue;
@@ -224,11 +227,11 @@ TranscodingEnigma::TranscodingEnigma(const string &service, int socketfd,
 	freeaddrinfo(gai_localhost_8001);
 
 	request = string("GET /") +
-				service + "?bitrate=" + bitrate + "?width=" + width + "?height=" + height + "?aspectratio=2?interlaced=0"
+				tdp->name + "?bitrate=" + bitrate + "?width=" + width + "?height=" + height + "?aspectratio=2?interlaced=0"
 				" HTTP/1.0\r\n";
 
-	if(webauth.length())
-		request += "Authorization: Basic " + webauth + "\r\n";
+	if(tdp->webauth.length())
+		request += "Authorization: Basic " + tdp->webauth + "\r\n";
 
 	request += "\r\n";
 
@@ -239,8 +242,15 @@ TranscodingEnigma::TranscodingEnigma(const string &service, int socketfd,
 
 	socket_queue.append(httpok.length(), httpok.c_str());
 
+	socketfd = tdp->fd;
+
 	for(;;)
 	{
+		if (tdp->fd != socketfd)           //  new seek request
+		{
+			close(tdp->fd);
+			break;							// can´t not handle bei enigma
+		}
 		pfd[0].fd		= enigmafd;
 		pfd[0].events	= POLLIN | POLLRDHUP;
 

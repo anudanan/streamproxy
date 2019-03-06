@@ -293,7 +293,7 @@ ClientSocket::ClientSocket(int fd_in,
 			else
 			{
 				Util::vlog("ClientSocket: file transcoding request");
-				if (!threadutil.createfilejob(urlparams["file"], client_addr, fd, stb_traits, streaming_parameters, config_map))
+				if (!threadutil.createfilejob(urlparams["file"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
 				{
 					Util::vlog("ClientSocket: no free thread for serving => abort");
 					close(fd);
@@ -318,7 +318,7 @@ ClientSocket::ClientSocket(int fd_in,
 			Service service(urlparams["service"]);
 
 			Util::vlog("ClientSocket: live transcoding request");
-			if (!threadutil.createlivejob(urlparams["service"], client_addr, fd, stb_traits, streaming_parameters, config_map))
+			if (!threadutil.createlivejob(urlparams["service"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
 			{
 				Util::vlog("ClientSocket: no free thread for serving => abort");
 				close(fd);
@@ -385,7 +385,7 @@ ClientSocket::ClientSocket(int fd_in,
 					else
 					{
 						Util::vlog("ClientSocket: transcoding file");
-						if (!threadutil.createfilejob(urlparams["file"], client_addr, fd, stb_traits, streaming_parameters, config_map))
+						if (!threadutil.createfilejob(urlparams["file"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
 						{
 							Util::vlog("ClientSocket: no free thread for serving => abort");
 							close(fd);
@@ -412,7 +412,7 @@ ClientSocket::ClientSocket(int fd_in,
 					else
 					{
 						Util::vlog("ClientSocket: default live transcoding request");
-						if (!threadutil.createlivejob(urlparams[""].substr(1), client_addr, fd, stb_traits, streaming_parameters, config_map))
+						if (!threadutil.createlivejob(urlparams[""].substr(1), client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
 						{
 							Util::vlog("ClientSocket: no free thread for serving => abort");
 							close(fd);

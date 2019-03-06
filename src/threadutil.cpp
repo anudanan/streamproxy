@@ -36,7 +36,7 @@ bool ThreadUtil::createtransidle()
 	return false;
 }
 
-bool ThreadUtil::createfilejob(std::string filename, std::string addr, int fd,
+bool ThreadUtil::createfilejob(std::string filename, std::string addr, int fd, std::string webauth,
                                 const stb_traits_t *stb_traits, StreamingParameters streaming_parameters,
                                 const ConfigMap *config_map)
 {
@@ -46,6 +46,7 @@ bool ThreadUtil::createfilejob(std::string filename, std::string addr, int fd,
 			clientthread[i].name = filename;
 			clientthread[i].addr = addr;
 			clientthread[i].fd = fd;
+			clientthread[i].webauth = webauth;
 			clientthread[i].stb_traits = stb_traits;
 			clientthread[i].streaming_parameters = streaming_parameters;
 			clientthread[i].config_map = config_map;
@@ -61,7 +62,7 @@ bool ThreadUtil::createfilejob(std::string filename, std::string addr, int fd,
 	return false;
 }
 
-bool ThreadUtil::createlivejob(std::string service, std::string addr, int fd,
+bool ThreadUtil::createlivejob(std::string service, std::string addr, int fd, std::string webauth,
                                 const stb_traits_t *stb_traits, StreamingParameters streaming_parameters,
                                 const ConfigMap *config_map)
 {
@@ -71,6 +72,7 @@ bool ThreadUtil::createlivejob(std::string service, std::string addr, int fd,
 			clientthread[i].name = service;
 			clientthread[i].addr = addr;
 			clientthread[i].fd = fd;
+			clientthread[i].webauth = webauth;
 			clientthread[i].stb_traits = stb_traits;
 			clientthread[i].streaming_parameters = streaming_parameters;
 			clientthread[i].config_map = config_map;

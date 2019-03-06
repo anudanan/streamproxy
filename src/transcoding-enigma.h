@@ -5,6 +5,7 @@
 #include "trap.h"
 #include "stbtraits.h"
 #include "types.h"
+#include "threadutil.h"
 
 #include <string>
 
@@ -17,10 +18,11 @@ class TranscodingEnigma
 
 	public:
 
-		TranscodingEnigma(const std::string &service,
-				int socketfd, std::string webauth,
-				const stb_traits_t &stb_traits_in,
-                const StreamingParameters &streaming_parameters);
+		TranscodingEnigma(ThreadData* tdp);
+//		TranscodingEnigma(const std::string &service,
+//				int socketfd, std::string webauth,
+//				const stb_traits_t &stb_traits_in,
+//				const StreamingParameters &streaming_parameters);
 };
 
 #endif

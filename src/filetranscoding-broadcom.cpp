@@ -85,7 +85,7 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 
 	for(;;)
 	{
-		if (tdp->fd != socket_fd)			//	new request
+		if (tdp->fd != socket_fd)			//	new seek request
 		{
 			if (socket_fd != 0)				//	socket change or first socket
 			{

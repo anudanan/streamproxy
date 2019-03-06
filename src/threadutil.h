@@ -27,6 +27,7 @@ typedef	struct
 	ThreadState			tstate;
 	std::string			name;
 	std::string			addr;
+	std::string			webauth;
 	int					fd;
 	const stb_traits_t	*stb_traits;
 	StreamingParameters	streaming_parameters;
@@ -44,10 +45,10 @@ class	ThreadUtil
 		ThreadData		*findclientseek(std::string filename, std::string addr, int fd, StreamingParameters streaming_parameters);
 		ThreadData		*findtid(pthread_t tid);
 		bool			jobsidle();
-		bool			createfilejob(std::string filename, std::string addr, int fd,
+		bool			createfilejob(std::string filename, std::string addr, int fd, std::string webauth,
 								const stb_traits_t *stb_traits, StreamingParameters streaming_parameters,
 								const ConfigMap *config_map);
-		bool			createlivejob(std::string service, std::string addr, int fd,
+		bool			createlivejob(std::string service, std::string addr, int fd, std::string webauth,
 								const stb_traits_t *stb_traits, StreamingParameters streaming_parameters,
 								const ConfigMap *config_map);
 		void			erasejob(ThreadData* tdp);
