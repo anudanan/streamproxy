@@ -377,11 +377,19 @@ ClientSocket::ClientSocket(int fd_in,
 				}
 				else
 				{
-					Util::vlog("ClientSocket: transcoding file");
-					if (!threadutil.createfilejob(urlparams["file"], client_addr, fd, stb_traits, streaming_parameters, config_map))
+					ThreadData *tdp =threadutil.findclientseek(urlparams["file"], client_addr, fd, streaming_parameters);
+					if (tdp != NULL)
+					{ 	Util::vlog("clientsocket: detect seeking from the same client, found thread %ul for seeking", tdp->tid);
+						return;
+					}
+					else
 					{
-						Util::vlog("ClientSocket: no free thread for serving => abort");
-						close(fd);
+						Util::vlog("ClientSocket: transcoding file");
+						if (!threadutil.createfilejob(urlparams["file"], client_addr, fd, stb_traits, streaming_parameters, config_map))
+						{
+							Util::vlog("ClientSocket: no free thread for serving => abort");
+							close(fd);
+						}
 					}
 				}
 				Util::vlog("ClientSocket: default file ends");
