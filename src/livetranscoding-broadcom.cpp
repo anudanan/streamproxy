@@ -21,6 +21,7 @@ using std::string;
 #include <time.h>
 
 LiveTranscodingBroadcom::LiveTranscodingBroadcom(const Service &service, int socketfd,
+		string webauth,
 		const stb_traits_t &stb_traits,
 		const StreamingParameters &streaming_parameters,
 		const ConfigMap &config_map)
@@ -47,15 +48,23 @@ LiveTranscodingBroadcom::LiveTranscodingBroadcom(const Service &service, int soc
 	Util::vlog("LiveTranscodingBroadcom: %s", service.service_string().c_str());
 
 	if(!service.is_valid())
-		throw(http_trap("LiveTranscodingBroadcom: invalid service", 404, "Not found, unknown service"));
+	{
+		http_trap("LiveTranscodingBroadcom: invalid service", 404, "Not found, unknown service");
+		close(socketfd);
+		return;
+	}
 
-	WebifRequest webifrequest(service, config_map);
+	WebifRequest webifrequest(service, webauth, config_map);
 
 	for(webifrequest_ok = false; (time(0) - timeout) < 60; )
 	{
 		usleep(100000);
 
-		webifrequest.poll();
+		if (!webifrequest.poll())
+		{
+			Util::vlog("LiveTranscodingBroadcom: no access to webif");
+			break;
+		}
 
 		pids = webifrequest.get_pids();
 
@@ -70,7 +79,12 @@ LiveTranscodingBroadcom::LiveTranscodingBroadcom(const Service &service, int soc
 	}
 
 	if(!webifrequest_ok)
-		throw(http_trap("LiveTranscodingBroadcom: tuning request to enigma failed (webif timeout)", 404, "Not found, cannot tune to service"));
+	{
+		Util::vlog("LiveTranscodingBroadcom: webifrequest not ok");
+		http_trap("LiveTranscodingBroadcom: tuning request to enigma failed (webif timeout)", 404, "Not found, cannot tune to service");
+		close(socketfd);
+		return;
+	}
 
 	demuxer_id = webifrequest.get_demuxer_id();
 
@@ -91,10 +105,16 @@ LiveTranscodingBroadcom::LiveTranscodingBroadcom(const Service &service, int soc
 	Demuxer demuxer(demuxer_id, encoder_pids);
 
 	if((encoder_fd = encoder.getfd()) < 0)
-		throw(trap("LiveTranscodingBroadcom: encoder: fd not open"));
+	{
+		trap("LiveTranscodingBroadcom: encoder: fd not open");
+		close(socketfd);
+	}
 
 	if((demuxer_fd = demuxer.getfd()) < 0)
-		throw(trap("LiveTranscodingBroadcom: demuxer: fd not open"));
+	{
+		trap("LiveTranscodingBroadcom: demuxer: fd not open");
+		close(socketfd);
+	}
 
 	socket_queue.append(httpok.length(), httpok.c_str());
 

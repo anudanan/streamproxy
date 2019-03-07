@@ -79,7 +79,10 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 		Util::vlog("FileTranscodingBroadcom: encoder pid[%s] = %d", it->first.c_str(), it->second);
 
 	if((encoder_fd = encoder.getfd()) < 0)
-		throw(trap("FileTranscodingBroadcom: transcoding: encoder: fd not open"));
+	{
+		trap("FileTranscodingBroadcom: transcoding: encoder: fd not open");
+		return;
+	}
 
 	encoder_state = state_initial;
 
@@ -256,7 +259,10 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 		timeout = (encoder_state == state_starting) ? 1000 : -1;
 
 		if(poll(pfd, 2, timeout) <= 0)
-			throw(trap("FileTranscodingBroadcom: poll error"));
+		{
+			Util::vlog("FileTranscodingBroadcom: poll error");
+			break;
+		}
 
 		if(pfd[0].revents & (POLLERR | POLLHUP | POLLNVAL))
 		{

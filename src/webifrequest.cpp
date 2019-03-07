@@ -35,7 +35,7 @@ static const struct addrinfo gai_webif_hints =
 	.ai_next        = 0,
 };
 
-WebifRequest::WebifRequest(const Service &service_in, const ConfigMap &config_map_in)
+WebifRequest::WebifRequest(const Service &service_in, string webauth, const ConfigMap &config_map_in)
 	:
 		service(service_in), config_map(config_map_in)
 {
@@ -74,7 +74,11 @@ WebifRequest::WebifRequest(const Service &service_in, const ConfigMap &config_ma
 
 	freeaddrinfo(gai_webif_address);
 
-	request = string("GET /web/stream?StreamService=") + service.service_string() + " HTTP/1.0\r\n\r\n";
+	request = string("GET /web/stream?StreamService=") + service.service_string() + " HTTP/1.0\r\n";
+	if(webauth.length())
+		request += "Authorization: Basic " + webauth + "\r\n";
+
+	request += "\r\n";
 
 	//Util::vlog("WebifRequest: send request to webif: \"%s\"", request.c_str());
 
@@ -87,7 +91,7 @@ WebifRequest::~WebifRequest()
 	close(fd);
 }
 
-void WebifRequest::poll()
+bool WebifRequest::poll()
 {
 	typedef vector<string> stringvector;
 
@@ -106,10 +110,13 @@ void WebifRequest::poll()
 	stringvector::const_iterator it;
 
 	if(ioctl(fd, SIOCINQ, &bytes))
-		throw(trap("WebifRequest: ioctl SIOCINQ"));
+	{
+		Util::vlog("WebifRequest: ioctl SIOCINQ");
+		return false;
+	}
 
 	if(bytes == 0)
-		return;
+		return true;
 
 	buffer = (char *)malloc(bytes + 1);
 
@@ -117,29 +124,32 @@ void WebifRequest::poll()
 	{
 		Util::vlog("WebifRequest: read returns %d", bytes_read);
 		free(buffer);
-		return;
+		return false;
 	}
 
 	buffer[bytes_read] = '\0';
 	reply += buffer;
 	free(buffer);
 
+	if (reply.find("401 Unauthorized") != string::npos)
+		return false;
+
 	if((sol = reply.rfind('+')) == string::npos)
-		return;
+		return true;
 
 	if((eol = reply.find('\n', sol)) == string::npos)
-		return;
+		return true;
 
 	line = reply.substr(sol, eol - sol);
 
 	if(line.length() < 3)
-		return;
+		return true;
 
 	if(line[0] != '+')
-		return;
+		return true;
 
 	if((idx = line.find(":")) == string::npos)
-		return;
+		return true;
 
 	demuxer		= line.substr(1, idx - 1);
 	line		= line.substr(idx + 1);
@@ -175,6 +185,7 @@ void WebifRequest::poll()
 			pids[id] = value;
 		}
 	}
+	return true;
 }
 
 PidMap WebifRequest::get_pids() const

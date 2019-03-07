@@ -19,6 +19,7 @@ using std::string;
 #include <time.h>
 
 LiveStreaming::LiveStreaming(const Service &service, int socketfd,
+		string webauth,
 		const StreamingParameters &, const ConfigMap &config_map)
 {
 	PidMap::const_iterator it;
@@ -40,13 +41,17 @@ LiveStreaming::LiveStreaming(const Service &service, int socketfd,
 	if(!service.is_valid())
 		throw(http_trap("LiveStreaming: invalid service", 404, "Not found, service not found"));
 
-	WebifRequest webifrequest(service, config_map);
+	WebifRequest webifrequest(service, webauth, config_map);
 
 	for(webifrequest_ok = false; (time(0) - timeout) < 60; )
 	{
 		usleep(100000);
 
-		webifrequest.poll();
+		if (!webifrequest.poll())
+		{
+			Util::vlog("Livestreaming: no access to webif");
+			break;
+		}
 
 		pids = webifrequest.get_pids();
 
@@ -61,7 +66,10 @@ LiveStreaming::LiveStreaming(const Service &service, int socketfd,
 	}
 
 	if(!webifrequest_ok)
-		throw(http_trap("LiveStreaming: tuning request to enigma failed (webif timeout)", 404, "Not found, service cannot be tuned"));
+	{
+		http_trap("LiveStreaming: tuning request to enigma failed (webif timeout)", 404, "Not found, service cannot be tuned");
+		return;
+	}
 
 	demuxer_id = webifrequest.get_demuxer_id();
 

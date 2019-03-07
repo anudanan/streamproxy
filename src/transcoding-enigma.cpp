@@ -168,7 +168,8 @@ TranscodingEnigma::TranscodingEnigma(ThreadData* tdp)
 
 			default:
 			{
-				throw(trap("TranscodingEnigma: unknown feature type"));
+				Util::vlog("TranscodingEnigma: unknown feature type");
+				return;
 			}
 		}
 
@@ -201,27 +202,38 @@ TranscodingEnigma::TranscodingEnigma(ThreadData* tdp)
 	}
 
 	if((rv = getaddrinfo("0.0.0.0", "8001", &gai_localhost_hints, &gai_localhost_8001)))
-		throw(trap(string("TranscodingEnigma: cannot get address for localhost:8001") + gai_strerror(rv)));
+	{
+		Util::vlog("TranscodingEnigma: cannot get address for localhost:8001 %s", gai_strerror(rv));
+		return;
+	}
 
 	if(!gai_localhost_8001)
-		throw(trap("TranscodingEnigma: cannot get address for localhost:8001"));
+	{
+		Util::vlog("TranscodingEnigma: cannot get address for localhost:8001");
+		return;
+	}
 
 	if((enigmafd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		freeaddrinfo(gai_localhost_8001);
-		throw(trap("TranscodingEnigma: cannot create socket"));
+		Util::vlog("TranscodingEnigma: cannot create socket");
+		return;
 	}
 
 	if(setsockopt(enigmafd, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger)))
 	{
 		freeaddrinfo(gai_localhost_8001);
-		throw(trap("TranscodingEnigma: cannot set linger"));
+		Util::vlog("TranscodingEnigma: cannot set linger");
+		close(enigmafd);
+		return;
 	}
 
 	if(connect(enigmafd, gai_localhost_8001->ai_addr, gai_localhost_8001->ai_addrlen))
 	{
 		freeaddrinfo(gai_localhost_8001);
-		throw(trap("TranscodingEnigma: cannot connect"));
+		Util::vlog("TranscodingEnigma: cannot connect");
+		close(enigmafd);
+		return;
 	}
 
 	freeaddrinfo(gai_localhost_8001);
@@ -238,7 +250,11 @@ TranscodingEnigma::TranscodingEnigma(ThreadData* tdp)
 	Util::vlog("TranscodingEnigma: send request to enigma: \"%s\"", request.c_str());
 
 	if(write(enigmafd, request.c_str(), request.length()) != (ssize_t)request.length())
-		throw(trap("TranscodingEnigma: cannot send request"));
+	{
+		Util::vlog("TranscodingEnigma: cannot send request");
+		close(enigmafd);
+		return;
+	}
 
 	socket_queue.append(httpok.length(), httpok.c_str());
 
@@ -261,7 +277,10 @@ TranscodingEnigma::TranscodingEnigma(ThreadData* tdp)
 			pfd[1].events |= POLLOUT;
 
 		if(poll(pfd, 2, -1) <= 0)
-			throw(trap("TranscodingEnigma: streaming: poll error"));
+		{
+			Util::vlog("TranscodingEnigma: streaming: poll error");
+			break;
+		}
 
 		if(pfd[0].revents & (POLLERR | POLLHUP | POLLNVAL))
 		{

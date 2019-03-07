@@ -26,10 +26,10 @@ class WebifRequest
 
 	public:
 
-		WebifRequest(const Service &service, const ConfigMap &config_map);
+		WebifRequest(const Service &service, std::string webauth, const ConfigMap &config_map);
 		~WebifRequest();
 
-		void	poll();
+		bool	poll();
 		PidMap	get_pids()				const;
 		int		get_demuxer_id()		const;
 };

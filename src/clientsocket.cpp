@@ -296,7 +296,7 @@ ClientSocket::ClientSocket(int fd_in,
 				if (!threadutil.createfilejob(urlparams["file"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
 				{
 					Util::vlog("ClientSocket: no free thread for serving => abort");
-					close(fd);
+					throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
 				}
 				return;
 			}
@@ -307,7 +307,7 @@ ClientSocket::ClientSocket(int fd_in,
 			Service service(urlparams["service"]);
 
 			Util::vlog("ClientSocket: live streaming request");
-			(void)LiveStreaming(service, fd, streaming_parameters, *config_map);
+			(void)LiveStreaming(service, fd, webauth, streaming_parameters, *config_map);
 			Util::vlog("ClientSocket: live streaming ends");
 			close(fd);
 			return;
@@ -321,7 +321,7 @@ ClientSocket::ClientSocket(int fd_in,
 			if (!threadutil.createlivejob(urlparams["service"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
 			{
 				Util::vlog("ClientSocket: no free thread for serving => abort");
-				close(fd);
+				throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
 				return;
 			}
 		}
@@ -374,6 +374,7 @@ ClientSocket::ClientSocket(int fd_in,
 					Util::vlog("ClientSocket: streaming file");
 					(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, *config_map);
 					close(fd);
+					Util::vlog("ClientSocket: default file ends");
 				}
 				else
 				{
@@ -388,11 +389,10 @@ ClientSocket::ClientSocket(int fd_in,
 						if (!threadutil.createfilejob(urlparams["file"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
 						{
 							Util::vlog("ClientSocket: no free thread for serving => abort");
-							close(fd);
+							throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
 						}
 					}
 				}
-				Util::vlog("ClientSocket: default file ends");
 				return;
 			}
 			else
@@ -406,8 +406,9 @@ ClientSocket::ClientSocket(int fd_in,
 					if(default_action == action_stream)
 					{
 						Util::vlog("ClientSocket: streaming service");
-						(void)LiveStreaming(service, fd, streaming_parameters, *config_map);
+						(void)LiveStreaming(service, fd, webauth, streaming_parameters, *config_map);
 						close(fd);
+						Util::vlog("ClientSocket: default live ends");
 					}
 					else
 					{
@@ -415,10 +416,9 @@ ClientSocket::ClientSocket(int fd_in,
 						if (!threadutil.createlivejob(urlparams[""].substr(1), client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
 						{
 							Util::vlog("ClientSocket: no free thread for serving => abort");
-							close(fd);
+							throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
 						}
 					}
-					Util::vlog("ClientSocket: default live ends");
 				}
 				return;
 			}
@@ -436,6 +436,7 @@ ClientSocket::ClientSocket(int fd_in,
 		Util::vlog("ClientSocket: http_trap: %s (%d: %s)", e.what(), e.http_error, message.c_str());
 
 		write(fd, reply.c_str(), reply.length());
+		close(fd);
 
 	}
 	catch(const trap &e)
@@ -444,6 +445,7 @@ ClientSocket::ClientSocket(int fd_in,
 		reply += http_error_headers;
 		Util::vlog("ClientSocket: trap: %s", e.what());
 		write(fd, reply.c_str(), reply.length());
+		close(fd);
 	}
 	catch(...)
 	{
@@ -451,6 +453,7 @@ ClientSocket::ClientSocket(int fd_in,
 		reply += http_error_headers;
 		Util::vlog("ClientSocket: unknown exception");
 		write(fd, reply.c_str(), reply.length());
+		close(fd);
 	}
 }
 
