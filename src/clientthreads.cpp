@@ -63,7 +63,7 @@ void *ClientThread::clientfile(void *arg)
 
 			default:
 			{
-A
+
 //				throw(http_trap(string("not a supported stb for transcoding"), 400, "Bad request"));
 				Util::vlog("Clientthreads: not a supported stb for transcoding");
 			}

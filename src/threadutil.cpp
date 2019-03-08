@@ -18,7 +18,7 @@ ThreadUtil::ThreadUtil()		// Init
 	for (unsigned i=0; i < CLIENTTHREADS; ++i)
 	{
 		clientthread[i].tid = 0;
-		clientthread[i].tstate = st_none;
+		clientthread[i].tstate = st_idle;
 		clientthread[i].name = "";
 		clientthread[i].addr = "";
 	}
@@ -27,9 +27,9 @@ ThreadUtil::ThreadUtil()		// Init
 bool ThreadUtil::createtransidle()
 {
 	for (unsigned i=0; i < CLIENTTHREADS; ++i)
-		if (clientthread[i].tstate  == st_none)
+		if (clientthread[i].tstate  == st_idle)
 		{
-			clientthread[i].tstate = st_idle,
+			clientthread[i].tstate = st_idletrans,
 			Util::vlog("ThreadUtil: new trancode thread handel [%d], addr: %s, name: %s", i, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
 			return true;
 		}
@@ -41,7 +41,7 @@ bool ThreadUtil::createfilejob(std::string filename, std::string addr, int fd, s
                                 const ConfigMap *config_map)
 {
 	for (unsigned i=0; i < CLIENTTHREADS; ++i)
-		if (clientthread[i].tstate == st_idle)
+		if (clientthread[i].tstate == st_idletrans)
 		{
 			clientthread[i].name = filename;
 			clientthread[i].addr = addr;
@@ -67,7 +67,7 @@ bool ThreadUtil::createlivejob(std::string service, std::string addr, int fd, st
                                 const ConfigMap *config_map)
 {
 	for (unsigned i=0; i < CLIENTTHREADS; ++i)
-		if (clientthread[i].tstate == st_idle)
+		if (clientthread[i].tstate == st_idletrans)
 		{
 			clientthread[i].name = service;
 			clientthread[i].addr = addr;
@@ -95,14 +95,17 @@ void ThreadUtil::erasejob(ThreadData *tdp)
 			tdp->name = "";
 			tdp->addr = "";
 			tdp->fd = 0;
-			tdp->tstate = st_idle;
+			if ((tdp->tstate == st_filetrans) || (tdp->tstate == st_livetrans))
+				tdp->tstate = st_idletrans;
+			else
+				tdp->tstate = st_idle;
 }
 
 bool ThreadUtil::jobsidle()
 {
 	bool ret = true;
 	for (unsigned i=0; i < CLIENTTHREADS; ++i)
-		if ((clientthread[i].tstate != st_idle) && (clientthread[i].tstate != st_none))
+		if ((clientthread[i].tstate != st_idle) && (clientthread[i].tstate != st_idletrans)) 
 			ret = false;
 	return ret;
 }

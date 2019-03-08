@@ -15,10 +15,12 @@
 
 typedef enum
 {
-	st_none,
 	st_idle,
+	st_idletrans,
 	st_filetrans,
-	st_livetrans
+	st_livetrans,
+	st_filestream,
+	st_livestream
 } ThreadState;
 
 typedef	struct
