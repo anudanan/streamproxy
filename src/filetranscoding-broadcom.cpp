@@ -92,6 +92,7 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 		{
 			if (socket_fd != 0)				//	socket change or first socket
 			{
+				socket_queue.write(socket_fd);
 				close(socket_fd);
 
 /*				Util::vlog("FileTranscodingbroadcom: starting draining");

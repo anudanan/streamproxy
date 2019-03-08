@@ -53,15 +53,17 @@ void *ClientThread::clientfile(void *arg)
 
 			case(stb_transcoding_enigma):
 			{
+
 				string service(string("1:0:1:0:0:0:0:0:0:0:") + Url(tdp->name).encode());
 				Util::vlog("Clientthread: transcoding service enigma");
 //				(void)TranscodingEnigma(service, tdp->fd, tdp->webauth, *(tdp->stb_traits), tdp->streaming_parameters);
-				(void)TranscodingEnigma(tdp);
+				(void)TranscodingEnigma(service, tdp);
 				break;
 			}
 
 			default:
 			{
+A
 //				throw(http_trap(string("not a supported stb for transcoding"), 400, "Bad request"));
 				Util::vlog("Clientthreads: not a supported stb for transcoding");
 			}
@@ -90,18 +92,19 @@ void *ClientThread::clientlive(void *arg)
 
 			case(stb_transcoding_enigma):
 			{
+
 				Util::vlog("ClientThreads: transcoding service enigma");
 //				(void)TranscodingEnigma(service.service_string(), fd, webauth, *stb_traits, streaming_parameters);
-				(void)TranscodingEnigma(tdp);
+				(void)TranscodingEnigma(service.service_string(), tdp);
 				break;
 			}
-
 			default:
 			{
 //				throw(http_trap(string("not a supported stb for transcoding"), 400, "Bad request"));
 				Util::vlog("Clientthreads: not a supported stb for transcoding");
 			}
 		}
+
 		threadutil.erasejob(tdp);
 		Util::vlog("ClientSocket: live transcoding ends");
 		return NULL;

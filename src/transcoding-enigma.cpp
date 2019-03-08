@@ -36,7 +36,7 @@ static const struct addrinfo gai_localhost_hints =
 	.ai_next		= 0,
 };
 
-TranscodingEnigma::TranscodingEnigma(ThreadData* tdp)
+TranscodingEnigma::TranscodingEnigma(const std::string &service, ThreadData* tdp)
 //TranscodingEnigma::TranscodingEnigma(const string &service, int socketfd,
 //		string webauth, const stb_traits_t &stb_traits,
 //		const StreamingParameters &streaming_parameters)
@@ -58,7 +58,7 @@ TranscodingEnigma::TranscodingEnigma(ThreadData* tdp)
 							"\r\n";
 	int					socketfd;
 
-	Util::vlog("TranscodingEnigma: %s", tdp->name.c_str());
+	Util::vlog("TranscodingEnigma: %s", service.c_str());
 
 	for(StreamingParameters::const_iterator it(tdp->streaming_parameters.begin()); it != tdp->streaming_parameters.end(); it++)
 	{
@@ -239,7 +239,7 @@ TranscodingEnigma::TranscodingEnigma(ThreadData* tdp)
 	freeaddrinfo(gai_localhost_8001);
 
 	request = string("GET /") +
-				tdp->name + "?bitrate=" + bitrate + "?width=" + width + "?height=" + height + "?aspectratio=2?interlaced=0"
+				service + "?bitrate=" + bitrate + "?width=" + width + "?height=" + height + "?aspectratio=2?interlaced=0"
 				" HTTP/1.0\r\n";
 
 	if(tdp->webauth.length())

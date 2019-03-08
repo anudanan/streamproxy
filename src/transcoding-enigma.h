@@ -18,7 +18,7 @@ class TranscodingEnigma
 
 	public:
 
-		TranscodingEnigma(ThreadData* tdp);
+		TranscodingEnigma(const std::string &service, ThreadData* tdp);
 //		TranscodingEnigma(const std::string &service,
 //				int socketfd, std::string webauth,
 //				const stb_traits_t &stb_traits_in,
