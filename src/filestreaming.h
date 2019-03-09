@@ -5,6 +5,7 @@
 #include "trap.h"
 #include "types.h"
 #include "configmap.h"
+#include "threadutil.h"
 
 #include <string>
 #include <sys/types.h>
@@ -17,10 +18,7 @@ class FileStreaming
 		FileStreaming(FileStreaming &);
 
 	public:
-
-		FileStreaming(std::string file, int socketfd, std::string webauth,
-				const StreamingParameters &streaming_parameters,
-				const ConfigMap &config_map);
+		FileStreaming(ThreadData *tdp);
 };
 
 #endif

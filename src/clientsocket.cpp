@@ -3,11 +3,6 @@
 
 #include "clientsocket.h"
 #include "service.h"
-#include "livestreaming.h"
-//#include "livetranscoding-broadcom.h"
-#include "filestreaming.h"
-//#include "filetranscoding-broadcom.h"
-#include "transcoding-enigma.h"
 #include "util.h"
 #include "url.h"
 #include "types.h"
@@ -285,53 +280,61 @@ ClientSocket::ClientSocket(int fd_in,
 
 		if((urlparams[""] == "/file") && urlparams.count("file"))
 		{
-			ThreadData *tdp =threadutil.findclientseek(urlparams["file"], client_addr, fd, streaming_parameters);
+			ThreadData *tdp =threadutil.findfiletransseek(urlparams["file"], client_addr, fd, streaming_parameters);
 			if (tdp != NULL)
-			{ 	Util::vlog("clientsocket: detect seeking from the same client, found thread %ul for seeking", tdp->tid);
-				return;
-			}
+				Util::vlog("clientsocket: detect seeking from the same client, found thread %ul for seeking", tdp->tid);
 			else
 			{
 				Util::vlog("ClientSocket: file transcoding request");
-				if (!threadutil.createfilejob(urlparams["file"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
+				if (!threadutil.createfiletransjob(urlparams["file"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
 				{
 					Util::vlog("ClientSocket: no free thread for serving => abort");
-					throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
+//					throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
+					close(fd);
 				}
-				return;
 			}
+			return;
 		}
 
 		if((urlparams[""] == "/livestream") && urlparams.count("service"))
 		{
-			Service service(urlparams["service"]);
-
 			Util::vlog("ClientSocket: live streaming request");
-			(void)LiveStreaming(service, fd, webauth, streaming_parameters, *config_map);
-			Util::vlog("ClientSocket: live streaming ends");
-			close(fd);
+			if (!threadutil.createlivestreamjob(urlparams["service"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
+			{
+				Util::vlog("ClientSocket: no free thread for serving => abort");
+//				throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
+				close(fd);
+			}
 			return;
 		}
 
 		if((urlparams[""] == "/live") && urlparams.count("service"))
 		{
-			Service service(urlparams["service"]);
-
 			Util::vlog("ClientSocket: live transcoding request");
-			if (!threadutil.createlivejob(urlparams["service"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
+			if (!threadutil.createlivetransjob(urlparams["service"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
 			{
 				Util::vlog("ClientSocket: no free thread for serving => abort");
-				throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
-				return;
+//				throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
+				close(fd);
 			}
+			return;
 		}
 
 		if((urlparams[""] == "/filestream") && urlparams.count("file"))
 		{
 			Util::vlog("ClientSocket: file streaming request");
-			(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, *config_map);
-			Util::vlog("ClientSocket: file streaming ends");
-			close(fd);
+			ThreadData *tdp =threadutil.findfilestreamseek(urlparams["file"], client_addr, fd, streaming_parameters);
+			if (tdp != NULL)
+				Util::vlog("clientsocket: detect seeking from the same filestream client, found thread %ul for seeking", tdp->tid);
+			else
+			{
+				if (!threadutil.createfilestreamjob(urlparams["file"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
+				{
+					Util::vlog("ClientSocket: no free thread for serving => abort");
+//					throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
+					close(fd);
+				}
+			}
 			return;
 		}
 
@@ -344,7 +347,6 @@ ClientSocket::ClientSocket(int fd_in,
 		if(urlparams[""] == "/web")
 		{
 			Util::vlog("ClientSocket: request for web");
-
 			string data;
 			WebRequest webrequest(*config_map, headers, cookies, urlparams, *stb_traits);
 
@@ -372,24 +374,31 @@ ClientSocket::ClientSocket(int fd_in,
 				if(default_action == action_stream)
 				{
 					Util::vlog("ClientSocket: streaming file");
-					(void)FileStreaming(urlparams["file"], fd, webauth, streaming_parameters, *config_map);
-					close(fd);
-					Util::vlog("ClientSocket: default file ends");
+					ThreadData *tdp =threadutil.findfilestreamseek(urlparams["file"], client_addr, fd, streaming_parameters);
+					if (tdp != NULL)
+						Util::vlog("clientsocket: detect seeking from the same filestream client, found thread %ul for seeking", tdp->tid);
+					else
+					{
+						if (!threadutil.createfilestreamjob(urlparams["file"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
+						{
+							Util::vlog("ClientSocket: no free thread for serving => abort");
+							close(fd);
+						}
+					}
 				}
 				else
 				{
-					ThreadData *tdp =threadutil.findclientseek(urlparams["file"], client_addr, fd, streaming_parameters);
+					ThreadData *tdp =threadutil.findfiletransseek(urlparams["file"], client_addr, fd, streaming_parameters);
 					if (tdp != NULL)
-					{ 	Util::vlog("clientsocket: detect seeking from the same client, found thread %ul for seeking", tdp->tid);
-						return;
-					}
+						Util::vlog("clientsocket: detect seeking from the same client, found thread %ul for seeking", tdp->tid);
 					else
 					{
 						Util::vlog("ClientSocket: transcoding file");
-						if (!threadutil.createfilejob(urlparams["file"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
+						if (!threadutil.createfiletransjob(urlparams["file"], client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
 						{
 							Util::vlog("ClientSocket: no free thread for serving => abort");
-							throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
+//							throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
+							close(fd);
 						}
 					}
 				}
@@ -406,17 +415,21 @@ ClientSocket::ClientSocket(int fd_in,
 					if(default_action == action_stream)
 					{
 						Util::vlog("ClientSocket: streaming service");
-						(void)LiveStreaming(service, fd, webauth, streaming_parameters, *config_map);
-						close(fd);
-						Util::vlog("ClientSocket: default live ends");
+						if (!threadutil.createlivestreamjob(urlparams[""].substr(1), client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
+						{
+							Util::vlog("ClientSocket: no free thread for serving => abort");
+//							throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
+							close(fd);
+						}
 					}
 					else
 					{
 						Util::vlog("ClientSocket: default live transcoding request");
-						if (!threadutil.createlivejob(urlparams[""].substr(1), client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
+						if (!threadutil.createlivetransjob(urlparams[""].substr(1), client_addr, fd, webauth, stb_traits, streaming_parameters, config_map))
 						{
 							Util::vlog("ClientSocket: no free thread for serving => abort");
-							throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
+//							throw(http_trap(string("no free thread for serving"), 400, "Bad request"));
+							close(fd);
 						}
 					}
 				}
@@ -424,7 +437,7 @@ ClientSocket::ClientSocket(int fd_in,
 			}
 		}
 //		throw(http_trap(string("unknown url: ") + urlparams[""], 404, "Not found"));
-		close (fd);
+		close(fd);
 	}
 	catch(const http_trap &e)
 	{

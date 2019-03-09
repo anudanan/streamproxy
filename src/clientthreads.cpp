@@ -5,8 +5,8 @@
 #include "service.h"
 #include "livestreaming.h"
 #include "livetranscoding-broadcom.h"
-#include "filestreaming.h"
 #include "filetranscoding-broadcom.h"
+#include "filestreaming.h"
 #include "transcoding-enigma.h"
 #include "util.h"
 #include "url.h"
@@ -36,11 +36,11 @@ ClientThread::ClientThread()
 {
 }
 
-void *ClientThread::clientfile(void *arg)
+void *ClientThread::clientfiletrans(void *arg)
 {
 		ThreadData *tdp	= (ThreadData*) arg;
 
-		Util::vlog("ClientSocket: file transcoding request");
+		Util::vlog("Clientthreads: file transcoding request");
 
 		switch(tdp->stb_traits->transcoding_type)
 		{
@@ -55,7 +55,7 @@ void *ClientThread::clientfile(void *arg)
 			{
 
 				string service(string("1:0:1:0:0:0:0:0:0:0:") + Url(tdp->name).encode());
-				Util::vlog("Clientthread: transcoding service enigma");
+				Util::vlog("Cliestthreads: transcoding service enigma");
 //				(void)TranscodingEnigma(service, tdp->fd, tdp->webauth, *(tdp->stb_traits), tdp->streaming_parameters);
 				(void)TranscodingEnigma(service, tdp);
 				break;
@@ -70,16 +70,27 @@ void *ClientThread::clientfile(void *arg)
 		}
 
 		threadutil.erasejob(tdp);
-		Util::vlog("ClientSocket: file transcoding ends");
+		Util::vlog("Clientthreads: file transcoding ends");
 		return NULL;
 }
 
-void *ClientThread::clientlive(void *arg)
+void *ClientThread::clientfilestream(void *arg)
+{
+		ThreadData *tdp	= (ThreadData*) arg;
+
+		Util::vlog("Clientthreads: filesttream request");
+		(void)FileStreaming(tdp);
+		threadutil.erasejob(tdp);
+		Util::vlog("Clientthreads: filestream ends");
+		return NULL;
+}
+
+void *ClientThread::clientlivetrans(void *arg)
 {
 		ThreadData *tdp	= (ThreadData*) arg;
 		Service service(tdp->name);
 
-		Util::vlog("ClientSocket: live transcoding request");
+		Util::vlog("Clientthreads: live transcoding request");
 
 		switch(tdp->stb_traits->transcoding_type)
 		{
@@ -92,7 +103,6 @@ void *ClientThread::clientlive(void *arg)
 
 			case(stb_transcoding_enigma):
 			{
-
 				Util::vlog("ClientThreads: transcoding service enigma");
 //				(void)TranscodingEnigma(service.service_string(), fd, webauth, *stb_traits, streaming_parameters);
 				(void)TranscodingEnigma(service.service_string(), tdp);
@@ -106,6 +116,19 @@ void *ClientThread::clientlive(void *arg)
 		}
 
 		threadutil.erasejob(tdp);
-		Util::vlog("ClientSocket: live transcoding ends");
+		Util::vlog("Clientthreads: live transcoding ends");
+		return NULL;
+}
+
+void *ClientThread::clientlivestream(void *arg)
+{
+		ThreadData *tdp	= (ThreadData*) arg;
+		Service service(tdp->name);
+
+		Util::vlog("Clientthreads: live streaming request");
+
+		(void)LiveStreaming(service, tdp->fd, tdp->webauth, tdp->streaming_parameters, *(tdp->config_map));
+		threadutil.erasejob(tdp);
+		Util::vlog("Clientthreads: live streaming ends");
 		return NULL;
 }

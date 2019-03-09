@@ -137,5 +137,7 @@ LiveStreaming::LiveStreaming(const Service &service, int socketfd,
 		}
 	}
 
+	close (socketfd);
+	close (demuxer_fd);
 	Util::vlog("LiveStreaming: streaming ends, socket max queue fill: %d%%", max_fill_socket);
 }
