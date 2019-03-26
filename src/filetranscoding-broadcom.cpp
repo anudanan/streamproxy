@@ -63,6 +63,12 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 
 	encoder_buffer = new char[broadcom_magic_buffer_size];
 
+	if (stream.pmt_pid == -1)
+	{
+		close(tdp->fd);
+		return;
+	}
+
 	pids["pmt"]		= stream.pmt_pid;
 	pids["video"]	= stream.video_pid;
 	pids["audio"]	= stream.audio_pid;

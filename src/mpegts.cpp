@@ -30,10 +30,11 @@ MpegTS::MpegTS(string filename, string audiolang_in, bool request_time_seek_in)
 		audiolang(audiolang_in),
 		request_time_seek(request_time_seek_in)
 {
+	pmt_pid = -1;
 	if((fd = open(filename.c_str(), O_RDONLY, 0)) < 0)
-		throw(trap("MpegTS::MpegTS: cannot open file"));
-
-	init();
+		Util::vlog("MpegTS::MpegTS: cannot open file");
+	else
+		init();
 }
 
 MpegTS::~MpegTS()
@@ -48,22 +49,32 @@ void MpegTS::init()
 	struct stat filestat;
 
 	if(fstat(fd, &filestat))
-		throw(trap("MpegTS::init: cannot stat"));
+	{
+		Util::vlog("MpegTS::init: cannot stat");
+		return;
+	}
 
 	Util::vlog("MpegTS::init: file length: %lld Mb", filestat.st_size  >> 20);
 
 	eof_offset = stream_length = filestat.st_size;
 	eof_offset = (eof_offset / sizeof(ts_packet_t)) * sizeof(ts_packet_t);
 
+
 	if(!read_pat())
-		throw(trap("MpegTS::init: invalid transport stream (no suitable pat)"));
+	{
+		Util::vlog("MpegTS::init: invalid transport stream (no suitable pat)");
+		return;
+	}
 
 	for(it = pat.begin(); it != pat.end(); it++)
 		if(read_pmt(it->second))
 			break;
 
 	if(it == pat.end())
-		throw(trap("MpegTS::init: invalid transport stream (no suitable pmt)"));
+	{
+		Util::vlog("MpegTS::init: invalid transport stream (no suitable pmt)");
+		return;
+	}
 
 	pmt_pid = it->second;
 	is_time_seekable = false;
@@ -136,13 +147,19 @@ bool MpegTS::read_table(int filter_pid, int filter_table)
 	raw_table_data.clear();
 	table_data.clear();
 
-	for(timeout = 0; timeout < 2000; timeout++)
+	for(timeout = 0; timeout < 2500; timeout++)
 	{
 		if(read(fd, (void *)&packet, sizeof(packet)) != sizeof(packet))
-			throw(trap("MpegTS::read_table: read error"));
+		{
+			Util::vlog("MpegTS::read_table: read error");
+			return(false);
+		}
 
 		if(packet.header.sync_byte != MpegTS::sync_byte_value)
-			throw(trap("MpegTS::read_table: no sync byte found"));
+		{
+			Util::vlog("MpegTS::read_table: no sync byte found");
+			return(false);
+		}
 
 		pid = (packet.header.pid_high << 8) | (packet.header.pid_low);
 
@@ -724,18 +741,30 @@ off_t MpegTS::seek(int whence, off_t offset) const
 	offset = ((offset / (off_t)sizeof(ts_packet_t)) * (off_t)sizeof(ts_packet_t));
 
 	if(lseek(fd, offset, whence) < 0)
-		throw(trap("MpegTS::seek: lseek (1)"));
+	{
+		Util::vlog("MpegTS::seek: lseek (1)");
+		return (0);
+	}
 
 	if(read(fd, &packet, sizeof(packet)) != sizeof(packet))
-		throw(trap("MpegTS::seek: read error"));
+	{
+		Util::vlog("MpegTS::seek: read error");
+		return(0);
+	}
 
 	if(packet.header.sync_byte != sync_byte_value)
-		throw(trap("MpegTS::seek: no sync byte"));
+	{
+		Util::vlog("MpegTS::seek: no sync byte");
+		return(0);
+	}
 
 	new_offset = (off_t)0 - (off_t)sizeof(packet);
 
 	if((actual_offset = lseek(fd, new_offset, SEEK_CUR)) < 0)
-		throw(trap("MpegTS::seek: lseek (2)"));
+	{
+		Util::vlog("MpegTS::seek: lseek (2)");
+		return(0);
+	}
 
 	return(actual_offset);
 }
@@ -750,7 +779,10 @@ off_t MpegTS::seek_relative(off_t roffset, off_t limit) const
 	off_t offset;
 
 	if((roffset < 0) || (roffset > limit))
-		throw(trap("MpegTS::seek_relative: value out of range"));
+	{
+		Util::vlog("MpegTS::seek_relative: value out of range");
+		return(0);
+	}
 
 	offset = (eof_offset / limit) * roffset;
 
@@ -770,7 +802,10 @@ off_t MpegTS::seek_time(int pts_ms) const
 	off_t	current_offset;
 
 	if(!is_time_seekable)
-		throw(trap("MpegTS::seek: stream is not seekable"));
+	{
+		Util::vlog("MpegTS::seek: stream is not seekable");
+		return(-1);
+	}
 
 	if(pts_ms < first_pcr_ms)
 	{

@@ -39,6 +39,11 @@ FileStreaming::FileStreaming(ThreadData *tdp)
 
 	socket_fd = 0;
 	MpegTS stream(file, "", time_offset_s > 0);
+	if (stream.pmt_pid == -1)
+	{
+		close(tdp->fd);
+		return;
+	}
 
 	for(;;)
 	{
@@ -185,4 +190,5 @@ FileStreaming::FileStreaming(ThreadData *tdp)
 
 	Util::vlog("FileStreaming: streaming ends, socket max queue fill: %d%%", max_fill_socket);
 	close(socket_fd);
+
 }
