@@ -97,7 +97,7 @@ void *ClientThread::clientlivetrans(void *arg)
 			case(stb_transcoding_broadcom):
 			{
 				Util::vlog("ClientThreads: transcoding service broadcom");
-				(void)LiveTranscodingBroadcom(service, tdp->fd, tdp->webauth, *(tdp->stb_traits), tdp->streaming_parameters, *(tdp->config_map));
+				(void)LiveTranscodingBroadcom(service, tdp->fd, tdp->encodernum, tdp->webauth, *(tdp->stb_traits), tdp->streaming_parameters, *(tdp->config_map));
 				break;
 			}
 

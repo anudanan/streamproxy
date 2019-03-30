@@ -21,10 +21,12 @@ using std::string;
 
 EncoderBroadcom::EncoderBroadcom(const PidMap &pids_in,
 		const stb_traits_t &stb_traits_in,
-		const StreamingParameters &streaming_parameters_in)
+		const StreamingParameters &streaming_parameters_in,
+		const int &encodernum_in)
 	:
 		streaming_parameters(streaming_parameters_in),
-		stb_traits(stb_traits_in)
+		stb_traits(stb_traits_in),
+		encodernum(encodernum_in)
 {
 	size_t					feature_index;
 	const stb_feature_t		*feature = 0;
@@ -86,7 +88,7 @@ EncoderBroadcom::EncoderBroadcom(const PidMap &pids_in,
 	// streamproxy threads, all of them having the encoder open
 	// for a short while
 
-	if(stb_traits.encoders > 0)
+	if((stb_traits.encoders > 0) && (encodernum == 0))
 	{
 		for(attempt = 0; attempt < 64; attempt++)
 		{
@@ -103,7 +105,7 @@ EncoderBroadcom::EncoderBroadcom(const PidMap &pids_in,
 		}
 	}
 
-	if((stb_traits.encoders > 1) && (encoder < 0))
+	if((stb_traits.encoders > 1) && (encodernum == 1))
 	{
 		for(attempt = 0; attempt < 64; attempt++)
 		{

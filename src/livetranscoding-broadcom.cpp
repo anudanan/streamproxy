@@ -20,7 +20,7 @@ using std::string;
 #include <poll.h>
 #include <time.h>
 
-LiveTranscodingBroadcom::LiveTranscodingBroadcom(const Service &service, int socketfd,
+LiveTranscodingBroadcom::LiveTranscodingBroadcom(const Service &service, int socketfd, int encodernum,
 		string webauth,
 		const stb_traits_t &stb_traits,
 		const StreamingParameters &streaming_parameters,
@@ -91,7 +91,7 @@ LiveTranscodingBroadcom::LiveTranscodingBroadcom(const Service &service, int soc
 	for(it = pids.begin(); it != pids.end(); it++)
 		Util::vlog("LiveTranscodingBroadcom: pid[%s] = 0x%x", it->first.c_str(), it->second);
 
-	EncoderBroadcom encoder(pids, stb_traits, streaming_parameters);
+	EncoderBroadcom encoder(pids, stb_traits, streaming_parameters, encodernum);
 	if (encoder.getfd()< 0)
 	{
 		close(socketfd);

@@ -18,6 +18,7 @@ ThreadUtil::ThreadUtil()		// Init
 	for (unsigned i=0; i < CLIENTTHREADS; ++i)
 	{
 		clientthread[i].tid = 0;
+		clientthread[1].encodernum = -1;
 		clientthread[i].tstate = st_idle;
 		clientthread[i].name = "";
 		clientthread[i].addr = "";
@@ -30,6 +31,7 @@ bool ThreadUtil::createtransidle()
 		if (clientthread[i].tstate  == st_idle)
 		{
 			clientthread[i].tstate = st_idletrans,
+			clientthread[i].encodernum = i;
 			Util::vlog("ThreadUtil: new trancode thread handel [%d], addr: %s, name: %s", i, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
 			return true;
 		}
@@ -188,10 +190,3 @@ bool ThreadUtil::jobsidle()
 	return ret;
 }
 
-ThreadData *ThreadUtil::findtid(pthread_t tid)
-{
-	for (unsigned i=0; i < CLIENTTHREADS; ++i)
-		if (clientthread[i].tid == tid)
-			return clientthread + i;
-	return NULL;
-}

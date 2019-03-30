@@ -25,6 +25,7 @@ typedef enum
 typedef	struct
 {
 	pthread_t			tid;
+	int					encodernum;
 	ThreadState			tstate;
 	std::string			name;
 	std::string			addr;
@@ -45,7 +46,6 @@ class	ThreadUtil
 		bool			createtransidle();
 		ThreadData		*findfiletransseek(std::string filename, std::string addr, int fd, StreamingParameters streaming_parameters);
 		ThreadData		*findfilestreamseek(std::string filename, std::string addr, int fd, StreamingParameters streaming_parameters);
-		ThreadData		*findtid(pthread_t tid);
 		bool			jobsidle();
 		bool			createfiletransjob(std::string filename, std::string addr, int fd, std::string webauth,
 								const stb_traits_t *stb_traits, StreamingParameters streaming_parameters,

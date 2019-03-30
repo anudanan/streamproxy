@@ -73,7 +73,7 @@ FileTranscodingBroadcom::FileTranscodingBroadcom(ThreadData * tdp)
 	pids["video"]	= stream.video_pid;
 	pids["audio"]	= stream.audio_pid;
 
-	EncoderBroadcom encoder(pids, *stb_traits, streaming_parameters);
+	EncoderBroadcom encoder(pids, *stb_traits, streaming_parameters, tdp->encodernum);
 	if (encoder.getfd()<0)
 	{
 		close(tdp->fd);

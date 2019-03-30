@@ -31,6 +31,7 @@ class EncoderBroadcom
 		PidMap						pids;
 		const StreamingParameters	&streaming_parameters;
 		const stb_traits_t			&stb_traits;
+		const int					&encodernum;
 
 		static void* start_thread_function(void *);
 
@@ -38,7 +39,8 @@ class EncoderBroadcom
 
 		EncoderBroadcom(const PidMap &,
 				const stb_traits_t &,
-				const StreamingParameters &);
+				const StreamingParameters &,
+				const int &);
 		~EncoderBroadcom();
 
 		std::string	getprop(std::string)				const;
