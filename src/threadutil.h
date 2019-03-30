@@ -43,7 +43,7 @@ class	ThreadUtil
 	public:
 		ThreadUtil();
 
-		bool			createtransidle();
+		bool			createtransidle(int encodernum);
 		ThreadData		*findfiletransseek(std::string filename, std::string addr, int fd, StreamingParameters streaming_parameters);
 		ThreadData		*findfilestreamseek(std::string filename, std::string addr, int fd, StreamingParameters streaming_parameters);
 		bool			jobsidle();

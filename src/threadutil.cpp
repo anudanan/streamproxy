@@ -25,13 +25,13 @@ ThreadUtil::ThreadUtil()		// Init
 	}
 }
 
-bool ThreadUtil::createtransidle()
+bool ThreadUtil::createtransidle(int encodernum)
 {
 	for (unsigned i=0; i < CLIENTTHREADS; ++i)
 		if (clientthread[i].tstate  == st_idle)
 		{
 			clientthread[i].tstate = st_idletrans,
-			clientthread[i].encodernum = i;
+			clientthread[i].encodernum = encodernum;
 			Util::vlog("ThreadUtil: new trancode thread handel [%d], addr: %s, name: %s", i, clientthread[i].addr.c_str(), clientthread[i].name.c_str());
 			return true;
 		}

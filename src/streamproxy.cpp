@@ -241,7 +241,7 @@ int main(int argc, char *const argv[], char *const arge[])
 
 		Util::vlog("model identified as: %s %s (%s)", stb_traits->manufacturer, stb_traits->model, stb_traits->chipset);
 		for(int i=0; i < stb_traits->encoders; i++)
-			threadutil.createtransidle();	// create transcoding thread handle for each transcoding HW
+			threadutil.createtransidle(i);	// create transcoding thread handle for each transcoding HW
 
 		for(it = listen_parameters.begin(); it != listen_parameters.end(); it++)
 		{
