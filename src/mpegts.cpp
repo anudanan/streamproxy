@@ -147,7 +147,7 @@ bool MpegTS::read_table(int filter_pid, int filter_table)
 	raw_table_data.clear();
 	table_data.clear();
 
-	for(timeout = 0; timeout < 2500; timeout++)
+	for(timeout = 0; timeout < 4500; timeout++)
 	{
 		if(read(fd, (void *)&packet, sizeof(packet)) != sizeof(packet))
 		{
