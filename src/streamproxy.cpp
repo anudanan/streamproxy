@@ -86,6 +86,7 @@ static string getaudiolang(string option_default_audiolang)
 	string				audiolang = "";
 	EnigmaSettings		settings;
 
+
 	if((option_default_audiolang.compare("xxx")==0) || option_default_audiolang.empty())
 	{
 		if(settings.exists("config.autolanguage.audio_autoselect1"))
@@ -274,8 +275,8 @@ int main(int argc, char *const argv[], char *const arge[])
 		if((pfds = listen_action.size() + 1) < 2)
 			throw(trap("no listen_port:default_action parameters given"));
 
-//		if(!Util::foreground && daemon(0, 0))
-//			throw(trap("daemon() gives error"));
+		if(!Util::foreground && daemon(0, 0))
+			throw(trap("daemon() gives error"));
 
 		sigaction(SIGCHLD, &signal_action, 0);
 
