@@ -28,6 +28,7 @@ LiveTranscodingBroadcom::LiveTranscodingBroadcom(const Service &service, int soc
 {
 	PidMap::const_iterator it;
 	bool			webifrequest_ok;
+	bool			restart;
 	time_t			timeout = time(0);
 	PidMap			pids, encoder_pids;
 	int				demuxer_id;
@@ -91,149 +92,161 @@ LiveTranscodingBroadcom::LiveTranscodingBroadcom(const Service &service, int soc
 	for(it = pids.begin(); it != pids.end(); it++)
 		Util::vlog("LiveTranscodingBroadcom: pid[%s] = 0x%x", it->first.c_str(), it->second);
 
-	EncoderBroadcom encoder(pids, stb_traits, streaming_parameters, encodernum);
-	if (encoder.getfd()< 0)
+	do
 	{
-		close(socketfd);
-		return;
-	}
-	encoder_pids = encoder.getpids();
+		restart = false;
+		EncoderBroadcom encoder(pids, stb_traits, streaming_parameters, encodernum);
+		if (encoder.getfd()< 0)
+		{
+			close(socketfd);
+			return;
+		}
+		encoder_pids = encoder.getpids();
 
-	for(it = encoder_pids.begin(); it != encoder_pids.end(); it++)
-		Util::vlog("LiveTranscodingBroadcom: encoder pid[%s] = 0x%x", it->first.c_str(), it->second);
+		for(it = encoder_pids.begin(); it != encoder_pids.end(); it++)
+			Util::vlog("LiveTranscodingBroadcom: encoder pid[%s] = 0x%x", it->first.c_str(), it->second);
 
-	Demuxer demuxer(demuxer_id, encoder_pids);
+		Demuxer demuxer(demuxer_id, encoder_pids);
 
-	if((encoder_fd = encoder.getfd()) < 0)
-	{
-		trap("LiveTranscodingBroadcom: encoder: fd not open");
-		close(socketfd);
-	}
+		if((encoder_fd = encoder.getfd()) < 0)
+		{
+			trap("LiveTranscodingBroadcom: encoder: fd not open");
+			close(socketfd);
+			break;
+		}
 
-	if((demuxer_fd = demuxer.getfd()) < 0)
-	{
-		trap("LiveTranscodingBroadcom: demuxer: fd not open");
-		close(socketfd);
-	}
+		if((demuxer_fd = demuxer.getfd()) < 0)
+		{
+			trap("LiveTranscodingBroadcom: demuxer: fd not open");
+			close(socketfd);
+			break;
+		}
 
-	socket_queue.append(httpok.length(), httpok.c_str());
+		socket_queue.append(httpok.length(), httpok.c_str());
 
-	encoder_state = state_initial;
+		encoder_state = state_initial;
 
-	for(;;)
-	{
-		if(encoder_queue.length() > max_fill_encoder)
-			max_fill_encoder = encoder_queue.usage();
+		for(;;)
+		{
+			if(encoder_queue.length() > max_fill_encoder)
+				max_fill_encoder = encoder_queue.usage();
 
-		if(socket_queue.length() > max_fill_socket)
+			if(socket_queue.length() > max_fill_socket)
 			max_fill_socket = socket_queue.usage();
 
-		switch(encoder_state)
-		{
-			case(state_initial):
+			switch(encoder_state)
 			{
-				if(encoder.start_init())
+				case(state_initial):
 				{
-					encoder_state = state_starting;
-					Util::vlog("LiveTranscodingBroadcom: state init -> starting");
+					if(encoder.start_init())
+					{
+						encoder_state = state_starting;
+						Util::vlog("LiveTranscodingBroadcom: state init -> starting");
+					}
+					break;
 				}
-				break;
-			}
 
-			case(state_starting):
-			{
-				if(encoder.start_finish())
+				case(state_starting):
 				{
-					encoder_state = state_running;
-					Util::vlog("LiveTranscodingBroadcom: state starting -> running");
+					if(encoder.start_finish())
+					{
+						encoder_state = state_running;
+						Util::vlog("LiveTranscodingBroadcom: state starting -> running");
+					}
+					break;
 				}
+
+				case(state_running):
+				{
+					break;
+				}
+			}
+
+			pfd[0].fd		= demuxer_fd;
+			pfd[0].events	= POLLIN;
+
+			pfd[1].fd		= encoder_fd;	// encoder_fd == -1 when not transcoding
+			pfd[1].events	= POLLIN;		// poll ignores fd's that are == -1
+
+			pfd[2].fd		= socketfd;
+			pfd[2].events	= POLLRDHUP;
+
+			if(encoder_queue.length() >= broadcom_magic_buffer_size)
+				pfd[1].events |= POLLOUT;
+
+			if(socket_queue.length() > 0)
+				pfd[2].events |= POLLOUT;
+
+			if(poll(pfd, 3, -1) <= 0)
+				throw(trap("LiveTranscodingBroadcom: streaming: poll error"));
+
+			if(pfd[0].revents & (POLLERR | POLLHUP | POLLNVAL))
+			{
+				Util::vlog("LiveTranscodingBroadcom: demuxer error 0x%x", pfd[0].revents);	
 				break;
 			}
 
-			case(state_running):
+			if(pfd[1].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
+				Util::vlog("LiveTranscodingBroadcom: encoder error 0x%x, restart LiveTranscoding", pfd[1].revents);
+				restart = true;
 				break;
 			}
-		}
 
-		pfd[0].fd		= demuxer_fd;
-		pfd[0].events	= POLLIN;
-
-		pfd[1].fd		= encoder_fd;	// encoder_fd == -1 when not transcoding
-		pfd[1].events	= POLLIN;		// poll ignores fd's that are == -1
-
-		pfd[2].fd		= socketfd;
-		pfd[2].events	= POLLRDHUP;
-
-		if(encoder_queue.length() >= broadcom_magic_buffer_size)
-			pfd[1].events |= POLLOUT;
-
-		if(socket_queue.length() > 0)
-			pfd[2].events |= POLLOUT;
-
-		if(poll(pfd, 3, -1) <= 0)
-			throw(trap("LiveTranscodingBroadcom: streaming: poll error"));
-
-		if(pfd[0].revents & (POLLERR | POLLHUP | POLLNVAL))
-		{
-			Util::vlog("LiveTranscodingBroadcom: demuxer error");
-			break;
-		}
-
-		if(pfd[1].revents & (POLLERR | POLLHUP | POLLNVAL))
-		{
-			Util::vlog("LiveTranscodingBroadcom: encoder error");
-			break;
-		}
-
-		if(pfd[2].revents & (POLLRDHUP | POLLHUP))
-		{
-			Util::vlog("LiveTranscodingBroadcom: client hung up");
-			break;
-		}
-
-		if(pfd[2].revents & (POLLERR | POLLNVAL))
-		{
-			Util::vlog("LiveTranscodingBroadcom: socket error");
-			break;
-		}
-
-		if(pfd[0].revents & POLLIN)
-		{
-			if(!encoder_queue.read(demuxer_fd))
+			if(pfd[2].revents & (POLLRDHUP | POLLHUP))
 			{
-				Util::vlog("LiveTranscodingBroadcom: read demux error");
+				Util::vlog("LiveTranscodingBroadcom: client hung up 0x%x", pfd[2].revents);
 				break;
 			}
-		}
 
-		if(pfd[1].revents & POLLOUT)
-		{
-			if(!encoder_queue.write(encoder_fd, broadcom_magic_buffer_size))
+			if(pfd[2].revents & (POLLERR | POLLNVAL))
 			{
-				Util::vlog("LiveTranscodingBroadcom: write encoder error");
+				Util::vlog("LiveTranscodingBroadcom: socket error 0x%x", pfd[2].revents);
 				break;
 			}
-		}
 
-		if(pfd[1].revents & POLLIN)
-		{
-			if(!socket_queue.read(encoder_fd, broadcom_magic_buffer_size))
+			if(pfd[0].revents & POLLIN)
 			{
-				Util::vlog("LiveTranscodingBroadcom: read encoder error");
-				break;
+				//Util::vlog("LiveTranscodingBroadcom: read demux");
+				if(!encoder_queue.read(demuxer_fd))
+				{
+					Util::vlog("LiveTranscodingBroadcom: read demux error");
+					break;
+				}
 			}
-		}
 
-		if(pfd[2].revents & POLLOUT)
-		{
-			if(!socket_queue.write(socketfd))
+			if(pfd[1].revents & POLLOUT)
 			{
-				Util::vlog("LiveTranscodingBroadcom: write socket error");
-				break;
+				//Util::vlog("LiveTranscodingBroadcom: write encoder");
+				if(!encoder_queue.write(encoder_fd, broadcom_magic_buffer_size))
+				{
+					Util::vlog("LiveTranscodingBroadcom: write encoder error");
+					break;
+				}
+			}
+
+			if(pfd[1].revents & POLLIN)
+			{
+				//Util::vlog("LiveTranscodingBroadcom: read encoder");
+				if(!socket_queue.read(encoder_fd, broadcom_magic_buffer_size))
+				{
+					Util::vlog("LiveTranscodingBroadcom: read encoder error");
+					break;
+				}
+			}
+
+			if(pfd[2].revents & POLLOUT)
+			{
+				//Util::vlog("LiveTranscodingBroadcom: write socket");
+				if(!socket_queue.write(socketfd))
+				{
+					Util::vlog("LiveTranscodingBroadcom: write socket error");
+					break;
+				}
 			}
 		}
 	}
+	while(restart);
 
 	close(socketfd);
 	Util::vlog("LiveTranscodingBroadcom: streaming ends, encoder max queue fill: %d%%", max_fill_encoder);
