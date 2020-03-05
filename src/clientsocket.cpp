@@ -225,13 +225,13 @@ ClientSocket::ClientSocket(int fd_in,
 
 			password = user.substr(idx + 1);
 			user = user.substr(0, idx);
-			client_addr = get_addr(fd);
-			Util::vlog("ClientSocket: from client ip: %s", client_addr.c_str());
 			Util::vlog("ClientSocket: authentication: %s,%s", user.c_str(), password.c_str());
 
 			if(!validate_user(user, password, config_map->at("group").string_value))
 				throw(http_trap("Invalid authentication", 403, "Forbidden, invalid authentication"));
 		}
+		client_addr = get_addr(fd);
+		Util::vlog("ClientSocket: from client ip: %s", client_addr.c_str());
 
 		if(headers.count("range"))
 		{
